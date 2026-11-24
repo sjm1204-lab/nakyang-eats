@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>낙양이츠</title>
+<!--
+  사진 넣는 법: 아래 스크립트 맨 위 IMG 객체에 키별로 data URI를 넣으면 '사진 자리'가 그 사진으로 바뀝니다.
+  예) IMG["s1m2"] = "data:image/jpeg;base64,...";
+  키 이름: 가게 큰 사진 s1~s5, 목록 카드 s1-a/s1-b/s1-c, 메뉴 s1m1 등, 카테고리 cat-lamb 등, 리뷰 r-s1-0 등
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=Noto+Serif+KR:wght@500&display=swap" rel="stylesheet">
+<style>
+/* VOICE: 실제 배달앱처럼 짧고 가벼운 말투, 근거 칸만 차분하게
+   IDEA: 북위 낙양 귀정리로 배달하는 앱
+   PICTURE: 앱 화면 그 자체, 음식 사진 자리는 비워 둠
+   COLOUR and TYPE: 흰 바탕, 하늘색 카트, 남색 사료 배지, 주홍 띠 / Noto Sans KR
+   LAYOUT: 휴대폰 폭 한 줄, 데스크톱에서는 가운데 정렬 */
+:root{color-scheme:light dark;--bg:light-dark(#fff,#16181d);--page:light-dark(#e9ecf0,#0b0c0f);--ink:light-dark(#1b2230,#eef1f6);--sub:light-dark(#6b7484,#9ba4b3);--line:light-dark(#eceef2,#2a2e37);--soft:light-dark(#f4f6f9,#1f2229);--soft2:light-dark(#e7eaef,#262a32);--blue:#2a9df4;--blue2:light-dark(#e9f5fe,#14283a);--navy:light-dark(#173b70,#8db8ff);--red:#e0452c;--gold:#f5b70a;--band:#a83a26}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html{background:var(--page)}
+body{margin:0;background:var(--page);color:var(--ink);font:15px/1.5 "Noto Sans KR",system-ui,sans-serif;overflow-x:clip;-webkit-tap-highlight-color:transparent}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+#app{max-width:430px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative}
+.ph{display:grid;place-items:center;width:100%;height:100%;object-fit:cover;background:repeating-linear-gradient(135deg,var(--soft) 0 10px,var(--soft2) 10px 20px);color:var(--sub);font-size:12px;text-align:center;line-height:1.3}
+.ph small{font-size:10px;opacity:.75}
+.bd{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:4px;vertical-align:middle;white-space:nowrap}
+.b1{background:light-dark(#e6effc,#1b2b47);color:var(--navy)}
+.b2{background:light-dark(#e3f5ee,#17322a);color:light-dark(#0f6b55,#6fd9b5)}
+.b3{background:var(--soft);color:var(--sub);font-weight:500}
+.scroll-x{display:flex;gap:14px;overflow-x:auto;scrollbar-width:none;scroll-snap-type:x mandatory}
+.scroll-x::-webkit-scrollbar{display:none}
+.scroll-x>*{flex:none;scroll-snap-align:start}
+/* 홈 */
+.promo{background:var(--band);color:#fff;padding:22px 20px 44px;text-align:center}
+.promo p{margin:0 0 14px;font-size:17px;font-weight:700}
+.promo b{color:#ffd66b}
+.scratch{position:relative;height:108px;max-width:300px;margin:0 auto;border-radius:12px;overflow:hidden;background:#fff;color:#1b2230;display:grid;place-items:center}
+.scratch .res{font-size:19px;font-weight:800;color:var(--band)}
+.scratch .res small{display:block;font-size:12px;font-weight:500;color:#6b7484}
+.scratch canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
+.lnk{font-size:12px;color:#ffe3dc;text-decoration:underline;margin-top:8px}
+.sheet{background:var(--bg);border-radius:20px 20px 0 0;margin-top:-22px;position:relative;padding:18px 0 8px}
+.addr{display:flex;justify-content:space-between;align-items:center;padding:0 20px}
+.addr button{display:flex;align-items:center;gap:6px;font-size:18px;font-weight:800;min-height:44px}
+.addr svg{width:22px;height:22px}
+.sbar{display:flex;align-items:center;gap:10px;margin:8px 20px 16px;padding:12px 16px;border:1px solid var(--line);border-radius:28px;box-shadow:0 2px 8px #0000000f;color:var(--sub);width:calc(100% - 40px);font-size:16px}
+.sbar svg{width:20px;height:20px;color:var(--ink)}
+.cats{padding:0 20px}
+.cat{width:68px;text-align:center;font-size:13px;font-weight:500}
+.cat .ph{width:60px;height:60px;border-radius:50%;margin:0 auto 6px;font-size:10px}
+.cat2{width:76px;text-align:center;font-size:12.5px;line-height:1.3}
+.cat2 i{display:grid;place-items:center;width:56px;height:56px;margin:0 auto 6px;border-radius:50%;font-style:normal;font-weight:800;font-size:13px;color:#fff}
+.hr{height:8px;background:var(--soft);margin:16px 0}
+.banners{padding:0 20px}
+.bn{width:calc(100vw - 72px);max-width:350px;border-radius:14px;padding:18px;color:#fff;min-height:120px;display:flex;flex-direction:column;justify-content:space-between;text-align:left}
+.bn b{font-size:18px;line-height:1.3}
+.bn span{font-size:12px;opacity:.85}
+h2{font-size:18px;margin:6px 20px 10px}
+.rank{list-style:none;margin:0;padding:0 20px}
+.rank li{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.rank em{font-style:normal;font-weight:800;color:var(--blue);width:18px}
+.rank .ph{width:48px;height:48px;border-radius:8px;flex:none}
+.rank div{flex:1}
+.rank small{color:var(--sub);display:block;font-size:12px}
+.note{font-size:12px;color:var(--sub);margin:8px 20px 0}
+/* 가게 카드 */
+.sc{display:block;width:100%;text-align:left;padding:0 20px 22px}
+.sc-img{display:grid;grid-template-columns:2.6fr 1fr;gap:4px;height:190px;position:relative}
+.sc-img>.ph{border-radius:12px 0 0 12px}.sc-img .side>.ph:first-child{border-radius:0 12px 0 0}.sc-img .side>.ph:last-child{border-radius:0 0 12px 0}
+.sc-img .side{display:grid;grid-template-rows:minmax(0,1fr) minmax(0,1fr);gap:4px;height:190px}.sc-img .ph{height:100%;min-height:0}
+.sc-promo{position:absolute;left:10px;right:10px;bottom:-14px;background:var(--navy);color:light-dark(#fff,#0b1730);border-radius:20px;padding:6px 12px;font-size:13px;font-weight:700;text-align:center}
+.sc-h{display:flex;align-items:center;gap:6px;margin-top:22px}
+.sc-h b{font-size:18px}
+.sc-h .tm{margin-left:auto;color:var(--sub)}
+.meta{color:var(--sub);font-size:13.5px;margin:2px 0 6px}
+.meta .st{color:var(--gold)}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tag{font-size:12px;padding:3px 8px;border-radius:6px;background:var(--blue2);color:var(--blue);font-weight:700}
+.tag.g{background:var(--soft);color:var(--ink);font-weight:500}
+/* 공통 헤더 */
+.hd{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:4px;height:56px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
+.hd h1{flex:1;text-align:center;font-size:18px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ib{width:44px;height:44px;display:grid;place-items:center}
+.ib svg{width:24px;height:24px}
+.tabs{display:flex;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:none}
+.tabs button{flex:none;padding:12px 16px;font-size:15px;color:var(--sub);border-bottom:3px solid transparent}
+.tabs .on{color:var(--blue);border-color:var(--blue);font-weight:700}
+.logos{padding:14px 20px}
+.logo{width:70px;text-align:center;font-size:12px}
+.logo .lgo{display:grid;place-items:center;width:60px;height:60px;border-radius:50%;margin:0 auto 4px;color:#fff;font-style:normal;font-weight:800;font-size:26px}
+.logo .ph{width:60px;height:60px;border-radius:50%;margin:0 auto 4px;font-size:10px}
+.frow{display:flex;align-items:center;gap:8px;padding:6px 20px 12px}
+.chk{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--navy);min-height:44px}
+.chk i{width:22px;height:22px;border:2px solid var(--line);border-radius:4px;display:grid;place-items:center;font-style:normal;font-size:14px}
+.chk.on i{background:var(--blue);border-color:var(--blue);color:#fff}
+.pill{margin-left:auto;border:1px solid var(--line);border-radius:20px;padding:7px 14px;font-size:14px}
+.adl{font-size:13px;color:var(--sub);padding:0 20px 10px}
+/* 가게 상세 */
+.hero{height:240px;position:relative}
+.hero-btns{position:absolute;top:8px;left:8px;right:8px;display:flex;gap:4px;color:#fff}
+.hero-btns .ib{background:#0006;border-radius:50%;width:40px;height:40px}
+.hero-btns .sp{flex:1}
+.hero-btns svg{width:22px;height:22px}
+.ib.fav-on svg{fill:var(--red);color:var(--red)}
+.card{margin:-60px 20px 0;position:relative;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:20px 16px;text-align:center;box-shadow:0 2px 10px #0000000d}
+.card h1{margin:0;font-size:24px}
+.card .rt{font-size:16px;font-weight:700;margin:4px 0 10px}
+.card .tags{justify-content:center}
+.intro{margin:12px 0 0;padding:10px 12px;background:var(--soft);border-radius:8px;text-align:left;font-size:14px}
+.intro small{display:block;color:var(--sub);font-size:12px;margin-top:4px}
+.dtabs{display:grid;grid-template-columns:1fr 1fr;margin-top:18px;border-bottom:1px solid var(--line)}
+.dtabs button{padding:14px;font-size:17px;font-weight:700;border-bottom:3px solid transparent;color:var(--sub)}
+.dtabs .on{color:var(--blue);border-color:var(--blue)}
+.info{padding:14px 20px;display:grid;grid-template-columns:80px 1fr;gap:8px 10px;font-size:15px}
+.info .l{color:var(--sub)}
+.info .row1{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.info .row1 button{font-weight:500;color:var(--sub);font-size:14px;min-height:36px}
+.cpn{display:flex;align-items:center;justify-content:space-between;margin:4px 20px 10px;padding:14px 16px;border-radius:10px;background:var(--navy);color:light-dark(#fff,#0b1730);font-weight:700;width:calc(100% - 40px);text-align:left}
+.notice{margin:6px 20px 12px;padding:12px 14px;border:1px solid var(--line);border-radius:10px;font-size:14px}
+.notice b{display:block;margin-bottom:2px}
+.notice small{color:var(--sub)}
+.rvs{padding:4px 20px 8px}
+.rvc{width:240px;display:flex;gap:10px;text-align:left;border:1px solid var(--line);border-radius:10px;padding:10px}
+.rvc .ph{width:76px;height:76px;border-radius:6px;flex:none}
+.rvc p{margin:0;font-size:13px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.rvc .st{color:var(--gold);font-size:13px}
+.grp{font-size:18px;font-weight:800;margin:20px 20px 4px}
+.mi{display:flex;gap:12px;width:100%;text-align:left;padding:14px 20px;border-bottom:1px solid var(--line)}
+.mi div{flex:1}
+.mi b{font-size:16px}
+.mi p{margin:2px 0;color:var(--sub);font-size:13px}
+.mi .pr{font-weight:700;color:var(--ink);font-size:15px}
+.mi .ph{width:92px;height:92px;border-radius:10px;flex:none}
+.best{color:var(--red);font-size:12px;font-weight:700;margin-right:4px}
+.soon{margin:10px 20px;padding:12px;border:1px dashed var(--line);border-radius:10px;color:var(--sub);font-size:13px}
+/* 메뉴 상세 */
+.mhero{height:300px;position:relative}
+.mhero .hero-btns{color:#fff}
+.mbody{padding:20px}
+.mbody h1{margin:0 0 2px;font-size:24px}
+.mbody .han{color:var(--sub);font-size:14px}
+.mbody .desc{color:var(--sub);margin:10px 0 14px;font-size:15px}
+.chip{display:inline-block;background:var(--soft);border-radius:16px;padding:6px 12px;font-size:13px;font-weight:500}
+.mrow{display:flex;align-items:center;gap:6px;margin-top:12px;font-weight:700;color:var(--sub);font-size:14px}
+.mrow svg{width:18px;height:18px}
+.basis{margin:16px 0 0;padding:14px;border-radius:12px;background:var(--soft)}
+.basis h3{margin:0 0 8px;font-size:15px}
+.basis p{margin:0 0 8px;font-size:14px}
+.basis .bd{margin-right:6px}
+.basis small{display:block;color:var(--sub);font-size:12.5px;border-top:1px solid var(--line);padding-top:8px}
+.line{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-top:1px solid var(--line)}
+.line .t{font-size:18px;font-weight:700}
+.price{text-align:right;font-size:20px;font-weight:800}
+.price small{display:block;color:var(--red);font-size:18px}
+.price small.o{color:var(--sub);text-decoration:line-through;font-size:14px;font-weight:500}
+.qty{display:flex;align-items:center;gap:14px;font-size:20px;font-weight:800}
+.qty button{width:44px;height:44px;border:1.5px solid var(--line);border-radius:50%;font-size:22px;color:var(--sub)}
+.og{background:var(--soft);display:flex;justify-content:space-between;padding:16px 20px;font-size:17px;font-weight:700}
+.og span{color:var(--red);font-size:15px}
+.og span.n{color:var(--sub)}
+.oc{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:14px 20px;font-size:16px;min-height:52px}
+.oc i{width:26px;height:26px;border:2px solid var(--line);border-radius:50%;flex:none;display:grid;place-items:center}
+.oc.on i{border-color:var(--blue)}
+.oc.on i::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--blue)}
+/* 리뷰 */
+.rv{padding:18px 20px;border-bottom:8px solid var(--soft)}
+.rv-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.rv-h b{font-size:16px}
+.rv-h small{color:var(--sub);font-size:13px}
+.rv .st{color:var(--gold);font-size:17px;letter-spacing:1px}
+.rv .dt{color:var(--sub);font-size:13px;margin-left:6px}
+.rv .ph{height:220px;border-radius:6px;margin:10px 0}
+.rv p{margin:10px 0;font-size:15px}
+.rv .chips{display:flex;gap:6px;flex-wrap:wrap}
+.rv .chips span{background:var(--blue2);color:var(--blue);border-radius:16px;padding:5px 12px;font-size:13px;font-weight:500}
+.own{position:relative;margin-top:14px;background:var(--soft);border-radius:10px;padding:14px}
+.own::before{content:"";position:absolute;top:-8px;left:20px;border:8px solid transparent;border-top:0;border-bottom-color:var(--soft)}
+.own b{font-size:14px}
+.own p{margin:6px 0;font-size:14px}
+.own small{color:var(--sub);font-size:12px}
+.more{color:var(--blue);font-size:13px;font-weight:700;margin-top:8px;min-height:36px}
+/* 카트, 주문 */
+.ci{display:flex;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.ci div{flex:1}
+.ci p{margin:2px 0;color:var(--sub);font-size:13px}
+.ci .qty{font-size:16px;gap:10px}
+.ci .qty button{width:34px;height:34px;font-size:18px}
+.sum{padding:16px 20px;display:grid;grid-template-columns:1fr auto;gap:6px;font-size:15px}
+.sum .t{font-size:18px;font-weight:800}
+.sum .dc{color:var(--red)}
+textarea{width:calc(100% - 40px);margin:0 20px;border:1px solid var(--line);border-radius:10px;padding:12px;font:16px "Noto Sans KR",sans-serif;background:var(--bg);color:var(--ink);resize:vertical;min-height:70px}
+.lbl{font-weight:700;margin:16px 20px 8px}
+.steps{list-style:none;margin:0;padding:10px 20px}
+.steps li{display:flex;gap:14px;padding:12px 0;color:var(--sub);font-size:16px;align-items:center}
+.steps i{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-style:normal;font-size:13px;font-weight:800;flex:none}
+.steps .on{color:var(--ink);font-weight:700}
+.steps .on i{background:var(--blue);border-color:var(--blue);color:#fff}
+.big{padding:24px 20px 6px}
+.big h2{margin:0;font-size:26px}
+.big p{color:var(--sub);margin:4px 0 0}
+.empty{padding:60px 20px;text-align:center;color:var(--sub)}
+.ol{display:block;width:100%;text-align:left;padding:16px 20px;border-bottom:1px solid var(--line)}
+.ol small{color:var(--sub);display:block}
+/* 검색, 마이, 이벤트 */
+.sin{display:flex;gap:8px;padding:10px 20px}
+.sin input{flex:1;border:1px solid var(--line);border-radius:24px;padding:11px 16px;font:16px "Noto Sans KR",sans-serif;background:var(--soft);color:var(--ink)}
+.kw{display:flex;flex-wrap:wrap;gap:8px;padding:4px 20px 12px}
+.kw button{border:1px solid var(--line);border-radius:18px;padding:7px 14px;font-size:14px}
+.alert{margin:10px 20px;padding:14px;border-radius:10px;background:var(--blue2);font-size:14px}
+.alert small{display:block;color:var(--sub);margin-top:4px}
+.sec{padding:18px 20px;border-bottom:8px solid var(--soft)}
+.sec h3{margin:0 0 10px;font-size:17px}
+.sec p,.sec li{font-size:14px;margin:0 0 8px}
+.sec ul{padding-left:18px;margin:0}
+.lg{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;font-size:14px}
+.ev{margin:16px 20px;padding:22px;border-radius:16px;background:var(--band);color:#fff;text-align:center}
+.ev .n{font-size:52px;font-weight:800;line-height:1.05}
+.ev .n small{font-size:20px}
+.ev p{margin:6px 0 0;opacity:.9}
+.flock{display:flex;justify-content:center;gap:8px;margin:14px 0 4px}
+.flock i{width:40px;height:40px;border-radius:50%;border:2px dashed #ffffff80;display:grid;place-items:center;font-style:normal;font-weight:800}
+.flock i.on{background:#fff;color:var(--band);border-style:solid}
+.btns{display:grid;gap:10px;padding:0 20px}
+.btn{min-height:52px;border-radius:12px;background:var(--blue);color:#fff;font-weight:800;font-size:16px}
+.btn.l{background:var(--soft);color:var(--ink)}
+.btn:disabled{opacity:.4;cursor:default}
+/* 하단 고정 */
+.dock{position:fixed;left:50%;bottom:0;transform:translateX(-50%);width:min(430px,100%);z-index:20}
+.tick{margin:0 12px 8px;background:light-dark(#fff8e8,#2a2414);border:2px solid #d8a548;border-radius:12px;padding:10px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 10px #00000014}
+.tick div{flex:1;font-size:13px;line-height:1.35}
+.tick b{font-size:16px}
+.tick .num{color:var(--red);font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.cbar{display:flex;align-items:center;gap:10px;width:100%;background:var(--blue);color:#fff;padding:16px 20px;font-size:18px;font-weight:700}
+.cbar i{background:#fff;color:var(--blue);border-radius:50%;width:26px;height:26px;display:grid;place-items:center;font-style:normal;font-size:14px}
+.cbar span{margin-left:auto;font-size:20px;font-weight:800}
+.cta{width:100%;background:var(--blue);color:#fff;padding:18px;font-size:18px;font-weight:700;text-align:center}
+.nav{display:grid;grid-template-columns:repeat(5,1fr);background:var(--bg);border-top:1px solid var(--line);padding:6px 0 max(6px,env(safe-area-inset-bottom))}
+.nav button{display:grid;justify-items:center;gap:2px;font-size:12px;color:var(--sub);min-height:50px}
+.nav svg{width:26px;height:26px}
+.nav .on{color:var(--ink);font-weight:700}
+/* 모달, 토스트 */
+.mo{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.mo-bg{position:absolute;inset:0;background:#0008}
+.mo-sh{position:relative;width:min(430px,100%);max-height:85vh;overflow:auto;background:var(--bg);border-radius:18px 18px 0 0;padding:22px 20px 26px}
+.mo-sh h3{margin:0 0 10px;font-size:19px}
+.mo-sh p{font-size:14.5px;margin:0 0 10px}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.vs button{min-height:90px;border-radius:14px;border:2px solid var(--line);font-size:22px;font-weight:800}
+.vs button.on{border-color:var(--blue);color:var(--blue)}
+.srcl{list-style:none;padding:0;margin:0}
+.srcl li{padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.srcl small{display:block;color:var(--sub)}
+.toast{position:fixed;left:50%;bottom:150px;transform:translateX(-50%);width:min(400px,calc(100% - 30px));background:#3d4450;color:#fff;padding:16px 18px;border-radius:10px;font-weight:700;z-index:60;font-size:16px}
+@media(prefers-reduced-motion:no-preference){.toast{animation:up .25s ease-out}@keyframes up{from{opacity:0;transform:translate(-50%,10px)}}}
+
+.c5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:0 12px}
+.c5 button{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;line-height:1.3;text-align:center;word-break:keep-all;min-height:44px}
+.c5 i{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:12.5px;color:#fff;flex:none}
+.nrow{display:flex;align-items:center;gap:10px;margin:0 20px 16px;padding:11px 14px;border-radius:10px;background:var(--soft);font-size:14px;width:calc(100% - 40px);text-align:left;min-height:44px}
+.nrow b{color:var(--red);flex:none}
+.nrow span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bell{position:relative}.bell .dot{position:absolute;top:9px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--blue)}
+button.sbtn{cursor:pointer;font:inherit;font-size:11px;font-weight:700;line-height:1.5}
+.srcbtn{color:var(--blue);font-size:12.5px;font-weight:700}
+.basis .ex{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.basis .ex small{border:0;padding:0}
+.basis>small{margin-bottom:2px}
+.orig{background:var(--soft);border-radius:10px;padding:12px 14px;font-family:"Noto Serif KR","Noto Serif TC",serif;font-size:15.5px;line-height:1.85;margin:8px 0 12px}
+.kl{font-weight:700;margin:0 0 4px!important}
+.mo-sh a{color:var(--blue);font-weight:700;line-height:2}
+.intro{margin:12px 0 0;padding:10px 12px;background:var(--soft);border-radius:8px;text-align:left;font-size:14px}
+.done{text-align:center;padding:8px 0 12px}
+.done i{display:grid;place-items:center;width:64px;height:64px;margin:0 auto 12px;border-radius:50%;background:var(--blue);color:#fff;font-style:normal;font-size:30px;font-weight:800}
+.done h3{font-size:21px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+{
+const IMG = {s1m1:"img/s1m1.jpg",s1m2:"img/s1m2.jpg",s1m3:"img/s1m3.jpg",s1m4:"img/s1m4.jpg",s1m5:"img/s1m5.jpg",s1m6:"img/s1m6.jpg",s2m1:"img/s2m1.jpg",s2m2:"img/s2m2.jpg",s2m3:"img/s2m3.jpg",s2m4:"img/s2m4.jpg",s2m5:"img/s2m5.jpg",s2m6:"img/s2m6.jpg",s3m1:"img/s3m1.jpg",s3m2:"img/s3m2.jpg",s3m3:"img/s3m3.jpg",s3m4:"img/s3m4.jpg",s3m5:"img/s3m5.jpg",s3m6:"img/s3m6.jpg",s3m7:"img/s3m7.jpg",s4m1:"img/s4m1.jpg",s4m2:"img/s4m2.jpg",s4m3:"img/s4m3.jpg",s4m4:"img/s4m4.jpg",s4m5:"img/s4m5.jpg",s4m6:"img/s4m6.jpg",s4m7:"img/s4m7.jpg",s4m8:"img/s4m8.jpg",s4m9:"img/s4m9.jpg",s4m10:"img/s4m10.jpg",s5m1:"img/s5m1.jpg",s5m2:"img/s5m2.jpg",s5m3:"img/s5m3.jpg",s5m4:"img/s5m4.jpg",s5m5:"img/s5m5.jpg",s1:"img/s1.jpg",s2:"img/s2.jpg",s3:"img/s3.jpg",s4:"img/s4.jpg",s5:"img/s5.jpg","s1-a":"img/s1m2.jpg","s1-b":"img/s1m3.jpg","s1-c":"img/s1m4.jpg","s2-a":"img/s2m1.jpg","s2-b":"img/s2m2.jpg","s2-c":"img/s2m4.jpg","s3-a":"img/s3m1.jpg","s3-b":"img/s3m2.jpg","s3-c":"img/s3m6.jpg","s4-a":"img/s4m1.jpg","s4-b":"img/s4m2.jpg","s4-c":"img/s4m3.jpg","s5-a":"img/s5m1.jpg","s5-b":"img/s5m2.jpg","s5-c":"img/s5m4.jpg","cat-lamb":"img/cat-lamb.png","cat-dairy":"img/cat-dairy.png","cat-fish":"img/cat-fish.png","cat-bread":"img/cat-bread.png","cat-drink":"img/cat-drink.png","cat-fruit":"img/cat-fruit.png"};
+
+/* ---------- 사료 원문 ---------- */
+const SRC={
+ suchun:{t:"효문제가 남제 사신에게 술과 구운 양고기를 내린 일",src:"『南齊書』 卷45 始安貞王道生傳(蕭遙昌)",
+  orig:"二年，虜主元宏寇壽春，遣使呼城內人，遙昌遣參軍崔慶遠、朱選之詣宏。……宏設酒及羊炙雜果，……",
+  ko:"(건무) 2년, 북위 군주 원굉(효문제)이 수춘을 치면서 사람을 보내 성안 사람을 불렀다. 소요창이 참군 최경원과 주선지를 원굉에게 보냈다. …… 원굉은 술과 구운 양고기, 여러 과일을 차려 냈다."},
+ wangsu:{t:"왕숙의 식습관과 효문제의 질문",src:"『洛陽伽藍記』 卷3 城南 正覺寺條",
+  orig:"肅初入國，不食羊肉及酪漿等物，常飯鯽魚羹，渴飲茗汁。……經數年已後，肅與高祖殿會，食羊肉酪粥甚多。高祖怪之，謂肅曰：「卿中國之味也，羊肉何如魚羹？茗飲何如酪漿？」肅對曰：「羊者是陸產之最，魚者乃水族之長。所好不同，並各稱珍。以味言之，甚有優劣。羊比齊魯大邦，魚比邾莒小國，唯茗不中，與酪作奴。」",
+  ko:"왕숙은 처음 북위에 왔을 때 양고기와 낙장 같은 것을 먹지 않고, 늘 붕어국을 먹고 목이 마르면 차를 마셨다. …… 몇 년이 지난 뒤 왕숙은 고조(효문제)와의 연회에서 양고기와 락죽을 매우 많이 먹었다. 고조가 이상하게 여겨 물었다. “경은 중국의 맛을 아는 사람이오. 양고기는 어갱과 비교해 어떻소? 차는 낙장과 비교해 어떻소?” 왕숙이 답했다. “양은 뭍에서 나는 것 가운데 으뜸이고, 물고기는 물에 사는 것 가운데 으뜸입니다. 좋아하는 바가 달라도 모두 진미라 할 만합니다. 맛으로 말하면 우열이 있어, 양은 제·노 같은 큰 나라에, 물고기는 주·거 같은 작은 나라에 견줄 수 있습니다. 다만 차만은 낙의 종도 되지 못합니다.”"},
+ yuanxi:{t:"함양왕 원희가 받은 낙장",src:"『北史』 卷19 咸陽王禧傳",
+  orig:"俄而禧被禽，送華林都亭，著千斤鎖格，龍武羽林掌衞之。時熱甚，禧渴悶垂死，敕斷水漿。侍中崔光令左右送酪漿升餘，禧一飲而盡。",
+  ko:"얼마 뒤 원희는 붙잡혀 화림도정으로 보내져 천 근짜리 쇠사슬과 형틀을 찼고, 용무와 우림이 그를 지켰다. 날이 몹시 더워 원희는 목이 타서 죽을 지경이었는데, 칙명으로 물과 마실 것이 끊겨 있었다. 시중 최광이 좌우에 일러 낙장 한 되 남짓을 보내니, 원희가 단숨에 다 마셨다.",
+  note:"원문은 ‘한 되 남짓(升餘)’이라고 적었어요."},
+ huiye:{t:"원휘업의 하루 양 세 마리",src:"『北史』 卷17 景穆十二王上 元暉業傳",
+  orig:"暉業以時運漸謝，不復圖全。唯事飲啖，一日三羊，三日一犢。",
+  ko:"원휘업은 시운이 점점 기울자 더는 몸을 보전하려 하지 않았다. 오로지 먹고 마시는 일에만 힘써, 하루에 양 세 마리, 사흘에 송아지 한 마리를 먹었다.",
+  note:"같은 이야기가 『北齊書』 卷28 元暉業傳에도 있지만, 그쪽은 ‘一日一羊’(하루 양 한 마리)으로 적었어요. 하루 세 마리는 『北史』 쪽 기록이에요."},
+ wangju:{t:"천도 뒤에도 우유를 마신 왕거",src:"『魏書』 卷94 閹官傳 王琚",
+  orig:"後降爵為公，扶老自平城從遷洛邑。……常飲牛乳，色如處子。",
+  ko:"뒤에 작위가 공으로 낮아졌고, 늙은 몸을 이끌고 평성에서 낙양으로 따라 옮겨 왔다. …… 늘 우유를 마셔 얼굴빛이 처녀 같았다."},
+ yongqiao:{t:"영교시의 이수·낙수 물고기",src:"『洛陽伽藍記』 卷3 城南",
+  orig:"別立市於洛水南，號曰四通市。民間謂為永橋市。伊洛之魚，多於此賣，士庶須膾，皆詣取之。魚味甚美。京師語曰：「洛鯉伊魴，貴於牛羊。」",
+  ko:"낙수 남쪽에 따로 시장을 세워 사통시라 불렀는데, 민간에서는 영교시라고 했다. 이수와 낙수의 물고기가 이곳에서 많이 팔려, 회가 필요한 사서들은 모두 이곳에 와서 샀다. 물고기 맛이 매우 좋아 서울 사람들은 “낙수 잉어와 이수 방어는 소·양보다 비싸다”고 했다."},
+ guizheng:{t:"귀정리 오인방의 어별시",src:"『洛陽伽藍記』 卷2 城東 (張景仁 이야기)",
+  orig:"賜宅城南歸正里，民間號為吳人坊，南來投化者多居其內。近伊洛二水，任其習御。里三千餘家，自立巷市。所賣口味，多是水族，時人謂為魚鱉市也。",
+  ko:"(장경인은) 성 남쪽 귀정리에 집을 받았다. 민간에서는 이곳을 오인방이라 불렀고, 남쪽에서 귀순해 온 사람들이 많이 살았다. 이수와 낙수 두 강이 가까워 익숙한 대로 지내게 했다. 마을에는 3천여 가구가 살며 스스로 골목 시장을 세웠는데, 파는 음식이 대부분 물고기 종류여서 당시 사람들은 어별시라 불렀다."},
+ luzheng:{t:"육정과 효어천",src:"『周書』 卷32 陸通傳",
+  orig:"父政，性至孝。其母吳人，好食魚，北土魚少，政求之常苦難。後宅側忽有泉出而有魚，遂得以供膳。時人以為孝感所致，因謂其泉為孝魚泉。",
+  ko:"(육통의) 아버지 육정은 효성이 지극했다. 어머니가 오 지역 사람이라 물고기를 좋아했는데, 북쪽 땅에는 물고기가 적어 육정은 늘 구하기 어려워 애를 먹었다. 뒤에 집 곁에서 갑자기 샘이 솟고 그 안에 물고기가 있어 반찬으로 올릴 수 있었다. 사람들은 효성에 감응한 일이라 여겨 그 샘을 효어천이라 불렀다."},
+ meat:{t:"관원·번객 고기 지급 절반 축소",src:"『魏書』 卷110 食貨志",
+  orig:"爾後寇賊轉眾，諸將出征，相繼奔敗，……帑藏益以空竭。有司又奏內外百官及諸蕃客稟食及肉悉二分減一，計終歲省肉百五十九萬九千八百五十六斤，米五萬三千九百三十二石。",
+  ko:"그 뒤 도적이 점점 늘어 장수들이 나가 싸웠으나 잇달아 패했고, …… 나라 창고는 더욱 비어 갔다. 담당 관청이 다시 아뢰어 안팎의 모든 관원과 번객에게 주던 식량과 고기를 모두 절반으로 줄이니, 한 해에 고기 1,599,856근과 쌀 53,932석을 아끼게 되었다.",
+  note:"절반이 1,599,856근이므로, 줄이기 전에는 한 해 3,199,712근을 주었던 셈이에요."}
+};
+
+/* ---------- 가게·메뉴 ---------- */
+const CATS=[["lamb","양고기·구이"],["dairy","낙장·유제품"],["fish","물고기·회"],["bread","호병·분식"],["drink","술·차"],["fruit","과일"]];
+const C1="최진열(2015)",C2="최덕경(2009)",QM="『齊民要術』";
+const E_SUCHUN=["이 일화에서 효문제가 남제의 사신에게 양고기를 안주 혹은 요리로 준 것은 당시 효문제와 신하들, 혹은 전쟁에 참여한 군인들이 양고기를 먹었기 때문일 것이다. 양고기는 본래 유목민들이 즐겨 먹었으므로, 당시 자신들의 식습관을 여전히 유지했다고 해석할 수 있을 것이다.",C1];
+const E_WANGSU1=["낙양가람기에서 강남에서 어류와 차에 익숙했던 왕숙이 북위에 살면서 유목민들의 주식인 양고기와 양젖의 발효식품을 익숙하게 잘 먹는 모습을 서술하였다.",C1];
+const E_YQ=["차뿐만 아니라 남방(강남)의 물고기 음식이 낙양에도 유행하였다.",C1];
+const E_HU=["북위의 제민요술속에 기재된 胡族 물품에는 胡餠, 胡椒酒, 荜拨酒, 胡飯, 胡羹과 羌煮 등이 보이는 것을 보면 유목민의 음식풍속이 중원지역에도 이식되었음을 살필 수 있다.",C2];
+const E_NOMAD=["위진남북조시대에는 전술한 바와 같이 胡族의 南下로 유목적 생활습속이 그대로 중원에 이식되는 결과를 초래했다.",C2];
+const E_FUSION=["게다가 콩을 이용한 作豉法, 豆․肉과 魚 및 楡子 등을 이용한 作醬法, 그리고 八和韲에 사용되는 橘․白梅 같은 재료와 생선과 猪肉을 이용한 젓갈 담구는 방식[魚鮓法] 등을 보면 齊民要術의 식품 속에는 胡漢을 넘어 남방 및 동북지역 등의 食문화 요소들이 잘 융합되어 있음을 알 수 있다.",C2];
+const S=[
+{id:"s1",name:"양고기왕자 락죽공주",cats:["lamb","dairy"],rating:"4.9",rc:"1,284",time:"30분",pick:"15분",min:10000,place:"낙양 성내",
+ promo:"낙장 1승 무료 쿠폰 사용 가능",tags:["리뷰이벤트","낙장 쿠폰"],
+ intro:["효문제와 호인(선비인)은 낙양으로 도읍을 옮기고 한화정책을 펼친 뒤에도 유목민의 음식문화를 지켰어요.",C1],
+ notice:"인기 순위는 양 1위, 소 2위예요. 북조 빙례(聘禮)에 쓴 고기는 양이 으뜸이고 다음이 소였으며, 돼지는 보이지 않았대요.",noticeSrc:C2+" 각주 76",
+ event:true,
+ groups:[["대표 메뉴",[
+  {id:"s1m1",n:"건무 2년 사신 접대 세트",h:"술 + 구운 양고기 + 과일",p:32000,best:1,d:"495년 수춘에서 효문제가 남제 사신에게 내준 구성 그대로 묶었어요.",
+   sr:["495년(建武 2) 수춘에 이른 효문제가 남제에서 보낸 참군 최경원·주선지에게 술과 구운 양고기(羊炙), 여러 과일을 차려 냈다.","suchun"],ex:E_SUCHUN},
+  {id:"s1m2",n:"구운 양고기",h:"羊炙",p:18000,best:1,d:"사신 접대 세트에 들어간 구운 양고기를 따로 팔아요.",
+   sr:["효문제가 남제 사신에게 술과 함께 구운 양고기(羊炙)를 내었다.","suchun"],ex:E_SUCHUN,
+   opt:[{t:"양 선택",req:1,c:[["1인분",0],["2인분",16000]]}]},
+  {id:"s1m3",n:"왕숙 세트",h:"양고기 + 락죽(酪粥)",p:24000,best:1,d:"망명 몇 년 뒤 어전 연회에서 왕숙이 매우 많이 먹었다는 조합이에요.",
+   sr:["몇 년 뒤 왕숙은 효문제와의 연회에서 양고기와 락죽(酪粥)을 매우 많이 먹었다.","wangsu"],
+   ex:["이로부터 몇 년 후 효문제와 북위의 관료들은 여전히 양고기와 낙장․락죽같은 유목민들이 먹던 음식을 먹었다. 이는 ‘한화정책’ 조치 이후에도 호인지배층이 여전히 자신들의 음식을 먹었음을 보여주는 결정적인 증거이다.",C1]}]],
+ ["낙·유제품",[
+  {id:"s1m4",n:"낙장 1승",h:"酪漿",p:4000,d:"화림도정에 갇힌 함양왕 원희가 더운 날 받은 그 양이에요. 쿠폰을 쓰면 0원.",
+   sr:["화림도정에 갇힌 함양왕 원희에게 날이 몹시 덥자 시중 최광이 낙장 한 되 남짓을 보냈고, 원희는 단숨에 다 마셨다.","yuanxi"],
+   ex:["이는 북위황실인 함양왕 원희가 일상생활에서 낙장을 마셨음을 보여주는 예이다.",C1]},
+  {id:"s1m5",n:"유락 한 잔",h:"乳酪",p:3500,d:"황제부터 백성까지 마셨다는 낙이에요.",
+   ex:["북위시대 유락을 마시는 풍습은 황제부터 일반 민중까지 보급되어 모두 낙(酪) 마시기를 좋아하였다.",C1]},
+  {id:"s1m6",n:"우유",h:"牛乳",p:3000,d:"낙양 천도 뒤에도 왕거가 마셨다는 우유예요.",
+   sr:["왕거는 평성에서 낙양으로 따라 옮겨 온 뒤에도 늘 우유를 마셨다.","wangju"],
+   ex:["종족에 상관없이 당시 우유가 한인들의 주식이 아니었으므로 왕거는 유제품을 주로 먹는 유목민들의 음식문화를 따랐음을 알 수 있다.",C1]}]]]},
+{id:"s2",name:"회에 진심 귀정리점",cats:["fish","drink"],rating:"4.8",rc:"962",time:"35분",pick:"20분",min:12000,place:"귀정리(오인방)",
+ promo:"이수 방어 입고! 소·양보다 비쌉니다",tags:["귀정리 본점","회 전문"],
+ intro:["남방(강남) 음식문화의 영향으로 낙양 사람들도 물고기와 회 같은 어류를 즐겨 먹게 되었어요.",C1],
+ notice:"잉어·방어 회는 낙수 남쪽 영교시 기록이고, 본점이 있는 귀정리에는 어별시가 있었어요. 북방 사람은 보리를, 남방 사람은 선어·회·어류를 먹었대요.",noticeSrc:C1,
+ groups:[["회",[
+  {id:"s2m1",n:"낙수 잉어 회",h:"洛水 鯉",p:38000,best:1,d:"영교시에서 소·양보다 비싸게 팔렸다는 낙수 잉어예요.",
+   sr:["영교시에서 이수와 낙수의 물고기가 많이 팔렸고 회를 찾는 사서들이 몰려들었다. 서울 사람들은 낙수 잉어와 이수 방어가 소·양보다 비싸다고 했다.","yongqiao"],ex:E_YQ},
+  {id:"s2m2",n:"이수 방어 회",h:"伊水 魴",p:42000,best:1,d:"이번 주 입고! 낙수 잉어와 함께 소·양보다 비쌌던 물고기예요.",
+   sr:["“낙수 잉어와 이수 방어는 소·양보다 비싸다(洛鯉伊魴，貴於牛羊).”","yongqiao"],ex:E_YQ},
+  {id:"s2m3",n:"왕숙 망명 1년차 세트",h:"붕어국 + 차",p:15000,d:"강남에서 막 넘어온 왕숙의 식단이에요.",
+   sr:["왕숙은 처음 북위에 왔을 때 양고기와 낙장을 먹지 않고, 늘 붕어국을 먹고 목이 마르면 차를 마셨다.","wangsu"],ex:E_WANGSU1}]],
+ ["국·차·오늘의 메뉴",[
+  {id:"s2m4",n:"붕어국",h:"鯽魚羹",p:12000,d:"왕숙이 망명 초에 늘 먹었다는 국이에요.",
+   sr:["왕숙은 망명 초 늘 붕어국을 먹었다.","wangsu"],ex:E_WANGSU1},
+  {id:"s2m5",n:"차",h:"茗汁",p:4500,d:"목마를 때 왕숙이 마셨다는 차예요.",
+   sr:["왕숙은 목이 마르면 차를 마셨다.","wangsu"],ex:E_YQ},
+  {id:"s2m6",n:"어별시 오늘의 물고기 음식",h:"魚鱉市",p:15000,d:"요리 이름이 기록에 없어서 그날그날 바뀌는 메뉴로 뒀어요.",
+   sr:["귀정리(오인방)에 사는 남쪽 출신 3천여 가구가 골목 시장을 세웠는데, 파는 음식이 대부분 물고기여서 사람들이 어별시라 불렀다.","guizheng"],
+   ex:["위에서 살펴본 것처럼 낙양에는 북방의 음식문화와 유목민의 양고기와 유제품, 남방(강남)의 차와 물고기 등 다양한 음식문화가 공존하여 영향을 주었다.",C1]}]]]},
+{id:"s3",name:"꿀밀가루의 고수 호병로점",cats:["bread","dairy"],rating:"4.7",rc:"608",time:"25분",pick:"10분",min:8000,place:"낙양 성내",
+ promo:"서역 스타일 호병 · 꿀 + 밀가루",tags:["호족 물품","분식"],
+ intro:["꿀과 밀가루를 섞어 호병로(胡餠鑪)에 구운 병은 서역의 영향을 받은 음식으로 보여요.",C2],
+ notice:"서쪽에서 들어온 밀(麥)이 병(餠)과 면식의 전통을 낳았대요. 조리법은 기록에 없어서 이름과 유래만 적었어요.",noticeSrc:C2,
+ groups:[["호병·호족 음식",[
+  {id:"s3m1",n:"호병",h:"胡餠",p:4000,best:1,d:"『제민요술』에 실린 호족 물품이에요.",sr:["『제민요술』에 호족 물품으로 호병이 실려 있다."],ex:E_HU},
+  {id:"s3m2",n:"꿀 밀가루 병",h:"胡餠鑪 구이",p:5000,best:1,d:"꿀과 밀가루를 섞어 호병로에서 익혔어요.",
+   sr:["『제민요술』 병법(餠法)에 꿀과 밀가루를 섞어 호병로(胡餠鑪)에 넣어 익히는 방식이 나온다.",null,"餠法"],
+   ex:["그리고 餠法에 꿀과 밀가루를 섞어 胡餠鑪에 넣어 익혀 만든것은 분명 서역의 영향을 받았던 것 같다.",C2]},
+  {id:"s3m3",n:"호반",h:"胡飯",p:8000,d:"『제민요술』에 실린 호족 물품이에요.",sr:["『제민요술』에 호족 물품으로 호반이 실려 있다."],ex:E_HU},
+  {id:"s3m4",n:"호갱",h:"胡羹",p:9000,d:"『제민요술』에 실린 호족 물품이에요.",sr:["『제민요술』에 호족 물품으로 호갱이 실려 있다."],ex:E_HU},
+  {id:"s3m5",n:"강자",h:"羌煮",p:11000,d:"『제민요술』에 실린 호족 물품이에요.",sr:["『제민요술』에 호족 물품으로 강자가 실려 있다."],ex:E_HU}]],
+ ["면·밥",[
+  {id:"s3m6",n:"우유·양유 면요리",h:"",p:9000,d:"한인들도 면을 만들 때 우유나 양유를 넣었어요.",
+   ex:["뿐만 아니라 한인들은 면요리를 만들 때 우유나 양유를 넣어 만들 정도였다.",C1],opt:[{t:"젖 선택",req:1,c:[["우유",0],["양유",500]]}]},
+  {id:"s3m7",n:"보리밥",h:"",p:2000,d:"북방 사람들의 주식이에요.",
+   ex:["황하 유역을 포함한 북방에서는 보리를 많이 심고 북쪽 사람들은 보리를 주로 먹었다.",C1+" (張承宗·魏向東 재인용)"]}]]]},
+{id:"s4",name:"저소 먹고 갈래?",cats:["lamb","fish"],rating:"4.8",rc:"715",time:"40분",pick:"20분",min:15000,place:"낙양 성내",
+ promo:"볶음보다 굽기가 많은 집 · 燒·烤",tags:["제민요술","호한 융합"],
+ intro:["『제민요술』의 음식에는 호(胡)와 한(漢)뿐 아니라 남방과 동북 지역의 식문화까지 고루 섞여 있어요.",C2],
+ notice:"돼지고기는 빙례 기록에는 안 보이지만 저소와 어자에는 들어가요.",noticeSrc:C2,
+ soon:"준비 중: 脯臘法 · 羹臛法 · 灌腸法 · 蒸缹法 · 菹綠法 · 炙法 · 䐑法 (논문에 이름만 나와서 메뉴로 만들지 않았어요)",
+ groups:[["대표 메뉴",[
+  {id:"s4m1",n:"저소",h:"菹消",p:16000,best:1,d:"절인 채소에 양고기와 돼지고기를 넣고 시즙에 달궈요.",
+   sr:["『제민요술』 저소법(菹消法)은 절인 채소에 양고기와 돼지고기를 시즙(豉汁)에 넣어 달구는 방식이다.",null,"菹消法"],
+   ex:["특히 菹消法은 절인 채소에 양고기와 돼지고기를 시즙에 넣어 달구는 방식으로 농목문화의 교묘한 결합이 빚어낸 조리법이라고 볼 수 있다.",C2+" 각주 91"]},
+  {id:"s4m2",n:"소(燒)·고(烤) 구이",h:"燒·烤",p:21000,best:1,d:"『제민요술』에서 가장 자주 나오는 조리법이에요.",
+   sr:["『제민요술』에는 볶음·튀김·구이·삶음·찜 등이 나오는데, 가장 자주 나오는 것은 고기를 굽는 燒와 烤다."],
+   ex:["그들 중 가장 출현빈도가 높은 것은 볶고 튀기는 것이 아니라 고기를 굽는 燒와 烤였다.",C2],
+   opt:[{t:"재료 선택",req:1,c:[["소",0],["양",0],["물고기",2000]]}]},
+  {id:"s4m3",n:"젖에 삶은 닭·오리·거위",h:"소·양고기 + 젖",p:19000,d:"소·양고기와 젖을 배합해 가금과 채소를 삶았어요.",
+   sr:["『제민요술』에 소·양고기와 젖을 배합해 닭·오리·거위와 각종 채소를 삶아 내는 방법이 나온다."],
+   ex:["牛·羊肉과 乳를 배합하여 鷄·鴨·鵝 및 각종 소채를 삶아낸 것도 胡漢 음식이 융합되어 나온 산물이라고 볼 수 있다.",C2],
+   opt:[{t:"가금 선택",req:1,c:[["닭",0],["오리",1000],["거위",2000]]}]},
+  {id:"s4m4",n:"맥적",h:"貊炙",p:17000,d:"강자, 호갱과 함께 유목적 습속을 보여 주는 구이예요.",ex:E_NOMAD},
+  {id:"s4m5",n:"쌀·밀가루 곁들인 소양고기",h:"",p:20000,d:"당시 사람들은 소·양고기에 쌀과 밀가루를 더하는 걸 좋아했어요.",
+   ex:["당시 牛羊肉을 가공할 때 米와 麵을 가미하는 것을 좋아했다.",C2],opt:[{t:"고기 선택",req:1,c:[["소",0],["양",0]]}]}]],
+ ["장·젓갈·곁들임",[
+  {id:"s4m6",n:"육장 모둠",h:"肉醬",p:22000,d:"고기 다섯 가지 가운데 골라요.",
+   sr:["『제민요술』 육장법(肉醬法)에 소, 양, 노루(麞), 사슴, 토끼고기를 쓴 육장이 나온다.",null,"肉醬法"],
+   ex:["유목민족이 南下하여 육식가공기술이 발달하면서 가축이나 짐승을 이용한 肉醬이 구체화된 듯하다.",C2],
+   opt:[{t:"고기 선택",req:1,c:[["소",0],["양",0],["노루",3000],["사슴",3000],["토끼",1000]]}]},
+  {id:"s4m7",n:"어자",h:"魚鮓",p:14000,d:"생선과 돼지고기로 담근 젓갈이에요.",sr:["『제민요술』에 생선과 돼지고기로 젓갈을 담그는 어자법(魚鮓法)이 나온다.",null,"魚鮓法"],ex:E_FUSION},
+  {id:"s4m8",n:"팔화제",h:"八和韲",p:3000,d:"귤과 백매가 들어가요.",sr:["『제민요술』 팔화제(八和韲)에 귤과 백매(白梅) 같은 재료를 쓴다."],ex:E_FUSION},
+  {id:"s4m9",n:"시",h:"豉",p:2000,d:"콩으로 만들어요.",sr:["『제민요술』에 콩을 이용한 작시법(作豉法)이 나온다.",null,"作豉法"],
+   ex:["동북지역은 大豆와 이와 관련된 豉와 豆醬 등의 발효식품이 많았던 것에 반해, 서북지역으로부터는 각종 채소와 과일이 많이 유입되었으며 …",C2]},
+  {id:"s4m10",n:"두장",h:"豆醬",p:2000,d:"콩·고기·물고기·느릅나무 열매 등을 써요.",sr:["『제민요술』에 콩·고기·물고기·느릅나무 열매(楡子) 등을 이용한 작장법(作醬法)이 나온다.",null,"作醬法"],ex:E_FUSION}]]]},
+{id:"s5",name:"술술 낙양주",cats:["drink","fruit"],rating:"4.9",rc:"833",time:"30분",pick:"10분",min:9000,place:"낙양 성내",
+ promo:"누룩 9종 중 8종이 밀",tags:["곡물주","과일"],
+ intro:["예전에는 과일술과 젖술이 중심이었지만, 농경이 자리 잡으면서 한족의 양조 기술을 익혀 곡물로도 술을 빚게 되었어요.",C2],
+ groups:[["술",[
+  {id:"s5m1",n:"곡물 양조주",h:"",p:9000,best:1,d:"원료와 누룩을 골라 빚어요.",
+   sr:["『제민요술』의 양조는 모두 찹쌀(糯米)·멥쌀(粳米)·기장(黍)·조(粟)를 원료로 했고, 주국 9종 가운데 8종이 밀, 1종이 조였다."],
+   ex:["제민요술에 등장하는 양조는 모두 糯米, 粳米, 黍, 粟을 원료로 했으며, 9종의 酒麴 중 8種이 小麥, 1種이 粟이었던 것을 보면 곡물이 양조의 주류를 이루고 있음을 알 수 있다.",C2],
+   opt:[{t:"원료",req:1,c:[["찹쌀(糯米)",0],["멥쌀(粳米)",0],["기장(黍)",0],["조(粟)",0]]},{t:"누룩(酒麴)",req:1,c:[["밀 누룩 (9종 중 8종)",0],["조 누룩 (9종 중 1종)",0]]}]},
+  {id:"s5m2",n:"호초주",h:"胡椒酒",p:12000,best:1,d:"『제민요술』에 실린 호족 물품이에요.",sr:["『제민요술』에 호족 물품으로 호초주가 실려 있다."],ex:E_HU},
+  {id:"s5m3",n:"필발주",h:"荜拨酒",p:12000,d:"『제민요술』에 실린 호족 물품이에요.",sr:["『제민요술』에 호족 물품으로 필발주가 실려 있다."],ex:E_HU}]],
+ ["과일·안주",[
+  {id:"s5m4",n:"과일 바구니",h:"",p:15000,d:"『제민요술』 속 과일 가운데 골라요.",sr:["『제민요술』에 대추·복숭아·자두·배·살구·매실 등 십여 종의 과일이 소개되어 있다."],
+   ex:["주곡 작물 이외에도 齊民要術에는 棗, 桃, 李, 梨, 杏, 梅 등 십여종의 다양한 과일이 소개되어 있다.",C2],
+   opt:[{t:"과일 선택",req:1,c:[["대추(棗)",0],["복숭아(桃)",0],["자두(李)",0],["배(梨)",0],["살구(杏)",0],["매실(梅)",0]]}]},
+  {id:"s5m5",n:"호두",h:"",p:5000,d:"위진시대에 흔해졌어요.",ex:["호두 : 위진시대 보편화",C2]}]]]}
+];
+
+/* ---------- 리뷰 ---------- */
+const RV={
+s1:[
+ {w:"왕*",tag:"사료 속 인물 · 왕숙",sk:"wangsu",st:5,dt:"망명 몇 년 뒤",m:"왕숙 세트",ph:1,link:"s2",
+  t:"[재주문] 처음 넘어왔을 땐 양고기랑 낙장 거들떠도 안 봤는데 ㅋㅋ 몇 년 지나니까 어전 연회에서 양고기+락죽 폭풍흡입 중. 폐하가 보시더니 ‘양고기랑 어갱 중에 뭐가 나음? 차랑 낙장은?’ 물어보심. 내 답: 양은 육지 원탑, 물고기는 물 원탑이라 둘 다 진미 인정. 근데 차는 낙한테 상대가 안 됨 ㅇㅇ",
+  r:"왕숙 손님, 몇 년 만의 재주문 정말 반가워요! 처음엔 양고기를 안 드시던 손님이 락죽까지 넉넉히 드셨다니 저희도 뿌듯합니다. 한화정책이 나온 뒤에도 폐하와 관료분들이 양고기와 낙장·락죽을 계속 드셨다는 게 호인 지배층이 자기 음식을 지켰다는 결정적인 증거라고 하더라고요. 또 들러 주세요!",s:C1},
+ {w:"최*원",tag:"사료 속 인물 · 남제 사신 최경원",sk:"suchun",st:5,dt:"495년(建武 2)",m:"건무 2년 사신 접대 세트",ph:1,
+  t:"남제 소요창 장군 밑 참군임. 사신으로 수춘 갔다가 상대편 황제한테 술+구운 양고기+과일 받음. 같이 간 주선지도 받음. 적국 황제 픽 세트가 메뉴로 나올 줄은 몰랐다 ㅋㅋㅋ",
+  r:"멀리 남제에서 와 주신 손님, 리뷰 감사합니다! 그날 폐하께서 양고기를 내신 건 폐하와 신하분들, 전쟁에 나선 군인들이 평소 양고기를 드셨기 때문일 거래요. 유목민이 즐기던 식습관을 그대로 이어 가신 거죠. 돌아가시는 길도 평안하시길 바랍니다.",s:C1},
+ {w:"원*업",tag:"사료 속 인물 · 원휘업",sk:"huiye",st:5,dt:"날짜 미상",m:"하루 양 3마리 챌린지",ph:0,
+  t:"챌린지라길래 들어왔는데 하루 양 3마리, 사흘에 송아지 1마리면 그냥 내 평소 식단인데요? 사장님 송아지 사흘마다 정기배송 되나요",
+  r:"원휘업 손님, 언제나 든든하게 드셔 주셔서 감사합니다! 손님 일화는 원씨 일족이 고기를 늘 드셨다는 근거로 자주 소개된대요. 송아지는 사흘마다 꼭 챙겨 둘게요.",s:C1},
+ {w:"원*",tag:"사료 속 인물 · 함양왕 원희",sk:"yuanxi",st:4,dt:"선무제 초",m:"낙장 1승",ph:0,
+  t:"사정상 화림도정에 묶여 있음. 날 더웠는데 시중 최광님이 낙장 1승 남짓 넣어주라고 해주심. 원샷함. 상황이 상황이라 별점은 묻지 마세요",
+  r:"힘든 상황에서도 저희 낙장을 찾아 주셔서 감사합니다. 손님 일화는 북위 황실분들이 일상에서 낙장을 드셨다는 예로 남아 있대요. 더운 날 한 잔이 조금이나마 위로가 되었길 바랍니다.",s:C1},
+ {w:"왕*",tag:"사료 속 인물 · 왕거",sk:"wangju",st:5,dt:"낙양천도 이후",m:"우유",ph:0,
+  t:"평성에서 낙양으로 옮겨 오고 나서도 우유 계속 마시는 중. 다들 내 피부 보고 놀라던데 비결은 이거임",
+  r:"왕거 손님, 꾸준히 찾아 주셔서 감사합니다! 당시 우유는 한인들의 주식이 아니어서, 손님처럼 유제품을 즐기시는 건 유목민의 음식문화를 따르신 거라고 하네요. 오래오래 건강하세요!",s:C1}],
+s2:[
+ {w:"왕*",tag:"사료 속 인물 · 왕숙",sk:"wangsu",st:5,dt:"494년(太和 18)",m:"왕숙 망명 1년차 세트",ph:1,link:"s1",
+  t:"강남에서 막 넘어온 1년차. 양고기랑 낙장은 아직 패스하고 붕어국만 계속 시켜 먹는 중. 목마르면 차 마심. 북쪽 와도 입맛은 강남 그대로임",
+  r:"강남에서 먼 길 오신 왕숙 손님, 환영합니다! 물고기와 차에 익숙하신 입맛에 맞춰 붕어국 정성껏 끓여 드릴게요. 혹시 몇 년 뒤 양고기에 눈뜨시면 이웃 가게도 들러 보세요 :)",s:C1},
+ {w:"육*",tag:"사료 속 인물 · 육정",sk:"luzheng",st:5,dt:"날짜 미상",m:"붕어국",ph:0,
+  t:"엄마가 강남 분이라 물고기를 정말 좋아하심. 근데 북쪽엔 물고기가 적어서 구하느라 고생 많이 했음. 그러다 집 옆에서 샘이 솟았는데 물고기가 있어서 그걸로 드림. 동네 사람들이 효어천이라고 부르더라. 이 가게가 그때 있었으면 ㅠ",
+  r:"효심 깊은 육정 손님, 리뷰 감사합니다. 강남에서 화북으로 오셔도 어머님 입맛은 쉽게 바뀌지 않으셨군요. 이제 샘까지 가지 않으셔도 어머님 드실 물고기는 저희가 챙겨 드릴게요.",s:C1},
+ {w:"영교시 단골",tag:"가상 손님 · 내용은 사료",sk:"yongqiao",st:5,dt:"날짜 미상",m:"이수 방어 회",ph:1,
+  t:"회 사려고 영교시 갔다가 사람 미어터져서 놀람. 이수·낙수 물고기 다 여기서 팜. 근데 낙수 잉어랑 이수 방어가 소·양보다 비싼 거 실화임?",
+  r:"늘 찾아 주셔서 감사합니다! 맞아요, 영교시에선 이수·낙수 물고기가 많이 팔려서 회 찾는 분들이 몰리셨대요. 맛이 좋다 보니 낙수 잉어와 이수 방어가 소·양보다 비싸졌다고 해요. 그만큼 좋은 놈으로 골라 드릴게요!",s:C1},
+ {w:"오인방 주민",tag:"가상 손님 · 내용은 사료",sk:"guizheng",st:5,dt:"날짜 미상",m:"어별시 오늘의 물고기 음식",ph:0,
+  t:"귀정리(오인방) 사는 사람임. 남쪽 출신 이웃들이 골목에 시장 열고 물고기 음식 파는데 다들 어별시라고 부름 ㅋㅋ 이름 직관적이라 좋음",
+  r:"이웃 손님 반가워요, 감사합니다! 귀정리에 사시는 남쪽 출신분들이 골목에 시장을 세우고 물고기 음식을 팔아서 어별시라고 불렸대요. 동네 이름값 하도록 열심히 할게요.",s:C1}],
+s3:[
+ {w:"낙양 한인",tag:"가상 손님 · 내용은 연구",st:5,dt:"날짜 미상",m:"우유·양유 면요리",ph:1,
+  t:"한인인데 요즘 면 만들 때 우유나 양유 넣음. 낙 마시는 건 위로는 황제부터 아래로는 백성까지 다 함",
+  r:"리뷰 감사합니다! 북위 때는 황제부터 백성까지 낙을 즐겼고, 한인분들도 면에 우유나 양유를 넣으셨대요. 다음엔 양유 버전도 드셔 보세요.",s:C1},
+ {w:"호병 러버",tag:"가상 손님 · 내용은 연구",st:5,dt:"날짜 미상",m:"꿀 밀가루 병",ph:1,
+  t:"꿀이랑 밀가루 섞어서 호병로에 구운 거. 서역에서 넘어온 스타일이라던데 원산지(?) 서역이라고 써주세요 ㅋㅋ",
+  r:"원산지 의견 감사합니다 ㅎㅎ 꿀과 밀가루를 섞어 호병로에 익히는 방식은 서역의 영향을 받은 것으로 본대요. 서역 감성 그대로 구워 드릴게요!",s:C2},
+ {w:"북쪽 토박이",tag:"가상 손님 · 내용은 연구",st:4,dt:"날짜 미상",m:"보리밥",ph:0,
+  t:"보리밥 기본으로 깔고 시작. 북쪽 사람은 보리지",
+  r:"든든하게 드셔 주셔서 감사합니다! 북방에선 보리를 많이 심고 주로 드셨고, 남방 분들은 생선과 회를 즐겨 드셨대요. 보리밥 넉넉히 담아 드릴게요.",s:C1}],
+s4:[
+ {w:"볶음파",tag:"가상 손님 · 내용은 연구",st:4,dt:"날짜 미상",m:"소(燒)·고(烤) 구이",ph:1,
+  t:"볶음 메뉴 찾다가 포기함 ㅋㅋ 사장님 말로는 제민요술에 볶음·튀김도 나오긴 하는데 제일 많이 나오는 건 굽는 거래",
+  r:"볶음 찾으셨는데 아쉬우셨죠, 그래도 와 주셔서 감사합니다! 『제민요술』에 볶음·튀김도 다 나오지만 가장 자주 나오는 건 고기를 굽는 燒와 烤래요. 구이 맛있게 구워 드릴게요.",s:C2},
+ {w:"저소 입문",tag:"가상 손님 · 내용은 연구",st:5,dt:"날짜 미상",m:"저소",ph:1,
+  t:"가게 이름 보고 시킴. 절인 채소에 양고기랑 돼지고기 넣고 시즙으로 달구는 거. 농사 쪽이랑 목축 쪽 콜라보 ㄷㄷ",
+  r:"가게 이름 보고 와 주셔서 감사합니다! 절인 채소에 양고기와 돼지고기를 시즙에 넣어 달구는 저소는 농경과 목축 문화가 결합한 조리법이래요. 다음에도 놀러 오세요.",s:C2+" 각주 91"},
+ {w:"육장 수집가",tag:"가상 손님 · 내용은 연구",st:5,dt:"날짜 미상",m:"육장 모둠",ph:0,
+  t:"고기 옵션에 소, 양만 있는 줄 알았는데 노루, 사슴, 토끼까지 있음. 선택장애 옴",
+  r:"고민 끝에 골라 주셔서 감사합니다 ㅎㅎ 『제민요술』 육장법에 소, 양, 노루, 사슴, 토끼고기 육장이 다 나와요. 다음엔 다른 고기로도 도전해 보세요!",s:C2}],
+s5:[
+ {w:"누룩 덕후",tag:"가상 손님 · 내용은 연구",st:5,dt:"날짜 미상",m:"곡물 양조주",ph:1,
+  t:"누룩 옵션 보는데 9종 중 8종이 밀이고 조는 1종뿐. 일부러 조 누룩 골라봄",
+  r:"조 누룩 고르신 안목에 감사드려요! 『제민요술』의 술은 모두 찹쌀·멥쌀·기장·조로 빚고, 누룩 9종 중 8종이 밀, 1종이 조였대요. 귀한 1종을 골라 주셨네요.",s:C2},
+ {w:"술자랑",tag:"가상 손님 · 내용은 연구",st:5,dt:"날짜 미상",m:"곡물 양조주",ph:0,
+  t:"옛날엔 과일술이나 젖술 위주였다던데 요즘은 곡물로 빚음. 호한 교류 체감 중",
+  r:"리뷰 감사합니다! 예전엔 과일술과 젖술이 중심이었는데, 농경화가 진행되며 한족의 양조기술로 곡물주를 빚게 되었대요. 다음 잔도 맛있게 빚어 둘게요.",s:C2},
+ {w:"호두러버",tag:"가상 손님 · 내용은 연구",st:5,dt:"날짜 미상",m:"호두",ph:0,
+  t:"호두가 위진 때부터 흔해졌다길래 술이랑 같이 시킴",
+  r:"안주 센스 감사합니다! 호두는 위진시대에 널리 퍼졌대요. 다음에도 함께 챙겨 드릴게요.",s:C2}]};
+
+const M={};S.forEach(s=>s.groups.forEach(g=>g[1].forEach(m=>{m.s=s.id;M[m.id]=m})));
+const SB=id=>S.find(s=>s.id===id);
+const LOGO={s1:"#a83a26",s2:"#0f6b74",s3:"#b8862a",s4:"#5f6b2e",s5:"#2c3570"};
+const RANK=[["s1m2","양고기"],["s4m2","소고기"],["s1m3",""],["s2m2",""],["s5m1",""]];
+const BANNERS=[
+ ["한화정책 시행 중, 오늘도 양고기는 드십니까?","한화정책 뒤에도 호인 지배층은 양고기를 먹었어요","#a83a26","store","s1"],
+ ["건무 2년 사신 접대 세트","술 + 구운 양고기 + 과일, 495년 수춘 구성 그대로","#173b70","menu","s1m1"],
+ ["이수 방어 입고! 소·양보다 비쌉니다","영교시 기록 · 『洛陽伽藍記』 卷3","#0f6b74","store","s2"],
+ ["차 vs 낙, 당신의 선택은?","효문제가 왕숙에게 물었던 그 질문","#5b4a1e","vote",""],
+ ["하루 양 3마리 챌린지","원휘업처럼 먹어 보기 · 사흘에 송아지 1마리","#3f5a2a","go","event"]];
+const NOTICES=[
+ {t:"관원·번객 고기 지급 절반 축소 안내",d:"정광 이후",k:"meat",body:"나라 살림이 어려워져 안팎의 관원과 번객(외국 손님)에게 드리던 고기를 절반으로 줄입니다. 한 해 1,599,856근을 아끼게 되어, 줄이기 전 지급량은 연 3,199,712근이었어요."},
+ {t:"이수 방어 입고 알림",d:"이번 주",k:"yongqiao",body:"회에 진심 귀정리점에 이수 방어가 들어왔어요. 낙수 잉어와 함께 소·양보다 비싸게 팔렸던 물고기예요."}];
+
+/* ---------- 상태 ---------- */
+const st={stack:[{v:"home"}],cart:{s:null,items:[]},coupon:false,cUsed:false,favs:new Set(),orders:[],vote:null,q:"",req:"",onlyHist:false,sel:null,read:false,ch:{day:1,sheep:0,total:0,tc:0}};
+const cur=()=>st.stack[st.stack.length-1];
+
+/* ---------- 도우미 ---------- */
+const won=n=>n.toLocaleString("ko-KR")+"원";
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ph=(k,cls="")=>IMG[k]?`<img class="ph ${cls}" src="${IMG[k]}" alt="">`:`<div class="ph ${cls}"><span>사진 자리<br><small>${k}</small></span></div>`;
+const bd=t=>`<span class="bd ${t==="사료"?"b1":t==="설명"?"b2":"b3"}">${t}</span>`;
+const sb=k=>k?`<button class="bd b1 sbtn" data-a="sv" data-x="${k}" aria-label="사료 원문 보기">사료 ›</button>`:bd("사료");
+const stars=n=>"★".repeat(n)+"☆".repeat(5-n);
+const srcLabel=m=>m.sr?(m.sr[1]?SRC[m.sr[1]].src:QM+(m.sr[2]?" "+m.sr[2]:"")):"";
+const I={
+ back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>',
+ search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
+ heart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>',
+ share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 8l5-5 5 5M5 13v7h14v-7"/></svg>',
+ home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 10l8-6 8 6v10h-5v-6H9v6H4z"/></svg>',
+ list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 12l2 2 4-4"/></svg>',
+ user:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>',
+ pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-6-6-6-11a6 6 0 0 1 12 0c0 5-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>',
+ bell:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4zM10 21h4"/></svg>',
+ thumb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M7 11v9H4v-9zM7 11l4-7c1.5 0 2.5 1 2 3l-1 3h6a2 2 0 0 1 2 2.3l-1.2 6A2 2 0 0 1 16.8 20H7"/></svg>',
+ msg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg>',
+ info:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>'};
+const hdr=(t,r="")=>`<header class="hd"><button class="ib" data-a="back" aria-label="뒤로">${I.back}</button><h1>${esc(t)}</h1><div style="width:44px;display:flex;justify-content:flex-end">${r}</div></header>`;
+const cartTotal=()=>st.cart.items.reduce((a,i)=>a+i.u*i.q,0);
+const discount=()=>st.coupon&&!st.cUsed&&st.cart.items.some(i=>i.id==="s1m4")?4000:0;
+const meta=s=>`<span class="st">★</span> ${s.rating}(${s.rc}) · 최소주문 ${won(s.min)} · 배달비 0원 ${bd("창작")}`;
+const cite=t=>t&&!t.startsWith(C1)?`<small>${t}</small>`:"";
+const quote=e=>`<p>${bd("설명")} “${e[0]}”</p>${cite(e[1])}`;
+
+/* ---------- 화면 ---------- */
+const V={};
+V.home=()=>`
+<section class="promo">
+ <p>낙양 손님께만 드리는 <b>100% 당첨 쿠폰</b>을 받아가세요</p>
+ <div class="scratch" id="scr"><div class="res">낙장 1승 무료 쿠폰<small>함양왕 원희가 받은 그 1승 ${sb("yuanxi")}</small></div>${st.coupon?"":'<canvas id="scv" aria-label="긁어서 쿠폰 확인하기"></canvas>'}</div>
+ ${st.coupon?'<div class="lnk" style="text-decoration:none">쿠폰함에 담겼어요</div>':'<button class="lnk" data-a="reveal">긁기 어려우면 눌러서 바로 확인</button>'}
+</section>
+<div class="sheet">
+ <div class="addr"><button data-a="toast" data-x="배달 주소는 북위 낙양시 귀정리(오인방)로 고정돼 있어요">${I.pin} 귀정리(오인방) <span style="color:var(--blue)">▾</span></button><button class="ib bell" data-a="notices" aria-label="알림">${I.bell}${st.read?"":'<i class="dot"></i>'}</button></div>
+ <button class="sbar" data-a="tab" data-x="search">${I.search} 양고기 어때요?</button>
+ <button class="nrow" data-a="sv" data-x="meat"><b>공지</b><span>관원·번객 고기 지급 절반 축소 안내</span>›</button>
+ <div class="cats scroll-x">${CATS.map(([k,n])=>`<button class="cat" data-a="cat" data-x="${k}">${ph("cat-"+k)}${n}</button>`).join("")}</div>
+ <div class="hr"></div>
+ <div class="c5">
+  <button data-a="go" data-x="event"><i style="background:#a83a26">양×3</i>하루 양 3마리 챌린지</button>
+  <button data-a="coupons"><i style="background:#173b70">쿠폰</i>미사용 쿠폰함</button>
+  <button data-a="vote"><i style="background:#5b4a1e">vs</i>차 vs 낙 투표</button>
+  <button data-a="menu" data-x="s1m1"><i style="background:#0f6b74">495</i>사신 접대 세트</button>
+  <button data-a="tab" data-x="my"><i style="background:#6b7484">출처</i>출처·구분 안내</button>
+ </div>
+ <div class="hr"></div>
+ <div class="banners scroll-x">${BANNERS.map(b=>`<button class="bn" style="background:${b[2]}" data-a="${b[3]}" data-x="${b[4]}"><b>${b[0]}</b><span>${b[1]}</span></button>`).join("")}</div>
+ <div class="hr"></div>
+ <h2>지금 낙양 인기 메뉴</h2>
+ <ol class="rank">${RANK.map(([id,k],i)=>{const m=M[id];return `<li><em>${i+1}</em>${ph(id)}<div><b>${m.n}</b>${k?` <span class="bd b1">${k} ${i+1}위</span>`:""}<small>${SB(m.s).name} · ${won(m.p)}</small></div><button class="pill" style="margin:0" data-a="menu" data-x="${id}">담기</button></li>`}).join("")}</ol>
+ <p class="note">${bd("창작")} 순위는 지어낸 것이에요. 양 1위, 소 2위만 북조 빙례(聘禮) 기록을 따랐어요(${C2} 각주 76).</p>
+ <div class="hr"></div>
+ <h2>낙양 전체 가게</h2>
+ ${S.map(storeCard).join("")}
+</div>`;
+function storeCard(s){return `<button class="sc" data-a="store" data-x="${s.id}">
+ <div class="sc-img">${ph(s.id+"-a")}<div class="side">${ph(s.id+"-b")}${ph(s.id+"-c")}</div><div class="sc-promo">${s.promo}</div></div>
+ <div class="sc-h"><b>${s.name}</b><span class="bd b1">사료 근거</span><span class="tm">${s.time}</span></div>
+ <div class="meta">${meta(s)}</div>
+ <div class="tags">${s.tags.map((t,i)=>`<span class="tag ${i?"g":""}">${t}</span>`).join("")}<span class="tag g">${s.place}</span></div></button>`}
+V.cat=k=>{const list=S.filter(s=>s.cats.includes(k)&&(!st.onlyCp||s.id==="s1"));return hdr(CATS.find(c=>c[0]===k)[1],`<button class="ib" data-a="tab" data-x="search" aria-label="검색">${I.search}</button>`)+`
+ <nav class="tabs">${CATS.map(([kk,n])=>`<button class="${kk===k?"on":""}" data-a="ctab" data-x="${kk}">${n}</button>`).join("")}</nav>
+ <div class="logos scroll-x">${list.map(s=>`<button class="logo" data-a="store" data-x="${s.id}"><i class="lgo" style="background:${LOGO[s.id]}">${s.name[0]}</i>${s.name.length>7?s.name.slice(0,7)+"…":s.name}</button>`).join("")}</div>
+ <div class="frow"><button class="chk ${st.onlyCp?"on":""}" data-a="onlycp"><i>${st.onlyCp?"✓":""}</i>낙장 쿠폰 가게만</button><button class="pill" data-a="toast" data-x="정렬 기준은 창작이에요">추천순 ▾</button></div>
+ <div class="adl">광고리스트 ${bd("창작")}</div>
+ ${list.length?list.map(storeCard).join(""):'<div class="empty">조건에 맞는 가게가 없어요</div>'}`};
+V.store=id=>{const s=SB(id),rv=RV[id],fav=st.favs.has(id);return `
+ <div class="hero">${ph(id)}<div class="hero-btns"><button class="ib" data-a="back" aria-label="뒤로">${I.back}</button><span class="sp"></span><button class="ib" data-a="tab" data-x="search" aria-label="검색">${I.search}</button><button class="ib" data-a="toast" data-x="공유 링크는 실제로 만들어지지 않아요" aria-label="공유">${I.share}</button><button class="ib ${fav?"fav-on":""}" data-a="fav" data-x="${id}" aria-label="찜">${I.heart}</button></div></div>
+ <div class="card"><h1>${s.name}</h1>
+  <button class="rt" data-a="reviews" data-x="${id}"><span style="color:var(--gold)">★</span> ${s.rating}(${s.rc}) › </button>
+  <div class="tags">${s.tags.map((t,i)=>`<span class="tag ${i?"g":""}">${t}</span>`).join("")}</div>
+  <div class="intro">${bd("설명")} ${s.intro[0]}${cite(s.intro[1])}</div></div>
+ <div class="dtabs"><button class="${st.pickup?"":"on"}" data-a="dtab" data-x="0">배달 ${s.time}</button><button class="${st.pickup?"on":""}" data-a="dtab" data-x="1">포장 ${s.pick}</button></div>
+ <div class="info"><div class="row1"><span>도착까지 약 ${st.pickup?s.pick:s.time} ${bd("창작")}</span><button data-a="src" data-x="${id}">매장·출처정보 ›</button></div>
+  <span class="l">최소주문</span><span>${won(s.min)}</span><span class="l">배달비</span><span>낙양 전역 0원</span><span class="l">위치</span><span>${s.place}</span></div>
+ ${id==="s1"?`<button class="cpn" data-a="${st.coupon?"coupons":"tab"}" data-x="home"><span>${st.coupon?"낙장 1승 무료 쿠폰 보유 중":"홈에서 긁는 쿠폰: 낙장 1승 무료"}</span><span>›</span></button>`:""}
+ ${s.event?`<button class="cpn" style="background:var(--band);color:#fff" data-a="go" data-x="event"><span>하루 양 3마리 챌린지 참여하기</span><span>›</span></button>`:""}
+ ${s.notice?`<div class="notice"><b>사장님 공지</b>${s.notice}${s.noticeSrc&&!s.noticeSrc.startsWith(C1)?`<br><small>${s.noticeSrc}</small>`:""}</div>`:""}
+ <div class="rvs scroll-x">${rv.map((r,i)=>`<button class="rvc" data-a="reviews" data-x="${id}"><div><p>${esc(r.t)}</p><span class="st">${stars(r.st)}</span></div></button>`).join("")}</div>
+ ${s.groups.map(([g,items])=>`<div class="grp">${g}</div>${items.map(menuRow).join("")}`).join("")}
+ ${s.soon?`<div class="soon">${s.soon}</div>`:""}`};
+function menuRow(m){return `<button class="mi" data-a="menu" data-x="${m.id}"><div>${m.best?'<span class="best">대표</span>':""}<b>${m.n}</b>${m.h?`<p>${m.h}</p>`:""}<p>${m.d}</p><span class="pr">${won(m.p)}</span></div>${ph(m.id)}</button>`}
+V.menu=id=>{const m=M[id],sel=st.sel,price=unit();const free=id==="s1m4"&&st.coupon&&!st.cUsed;const rc=RV[m.s].filter(r=>r.m===m.n).length;return `
+ <div class="mhero">${ph(id)}<div class="hero-btns"><button class="ib" data-a="back" aria-label="뒤로">${I.back}</button><span class="sp"></span><button class="ib" data-a="toast" data-x="공유 링크는 실제로 만들어지지 않아요" aria-label="공유">${I.share}</button></div></div>
+ <div class="mbody"><h1>${m.n}</h1>${m.h?`<div class="han">${m.h}</div>`:""}<p class="desc">${m.d}</p>
+  <button class="chip" data-a="src" data-x="${m.s}">매장·출처 정보</button>
+  <button class="mrow" data-a="reviews" data-x="${m.s}">${I.thumb} 추천 ${bd("창작")} · ${I.msg} 리뷰(${rc}) ›</button>
+  <div class="basis"><h3>이 메뉴의 근거</h3>
+   ${m.sr?`<p>${sb(m.sr[1])} ${m.sr[0]}</p><small>원전: ${srcLabel(m)}${m.sr[1]?` · <button class="srcbtn" data-a="sv" data-x="${m.sr[1]}">원문 보기 ›</button>`:""}</small>`:""}
+   ${m.ex?`<div class="ex">${quote(m.ex)}</div>`:""}</div></div>
+ <div class="line"><span class="t">가격</span><div class="price">${free?`<small class="o">${won(price)}</small><small>나의 할인가 0원</small>`:won(price)}</div></div>
+ <div class="line"><span class="t">수량</span><div class="qty"><button data-a="qty" data-x="-1" aria-label="빼기">−</button>${sel.q}<button data-a="qty" data-x="1" aria-label="더하기">+</button></div></div>
+ ${(m.opt||[]).map((g,gi)=>`<div class="og">${g.t}<span class="${g.req?"":"n"}">${g.req?"필수 선택":"선택"}</span></div>${g.c.map(([n,a],ci)=>`<button class="oc ${sel.o[gi]===ci?"on":""}" data-a="opt" data-x="${gi}:${ci}"><i></i>${n}${a?` (+${won(a)})`:""}</button>`).join("")}`).join("")}
+ <div style="height:20px"></div>`};
+function unit(){const m=M[st.sel.id];return m.p+(m.opt||[]).reduce((a,g,gi)=>a+(st.sel.o[gi]!=null?g.c[st.sel.o[gi]][1]:0),0)}
+V.reviews=id=>{const s=SB(id);const list=RV[id].filter(r=>!st.onlyHist||r.tag.startsWith("사료"));return hdr(s.name+" 리뷰",`<button class="ib" data-a="rvinfo" aria-label="안내">${I.info}</button>`)+`
+ <div class="frow"><button class="chk ${st.onlyHist?"on":""}" data-a="onlyhist"><i>${st.onlyHist?"✓":""}</i>사료 속 인물만</button><button class="pill" data-a="toast" data-x="별점은 창작이에요">별점 높은 순 ▾</button></div>
+ ${list.map(r=>`<article class="rv"><div class="rv-h"><b>${r.w}</b><small>${r.tag}</small></div>
+  <div><span class="st">${stars(r.st)}</span><span class="dt">| ${r.dt}</span></div>
+  <p>${esc(r.t)}</p><div class="chips"><span>${r.m}</span>${r.sk?`<button class="bd b1 sbtn" style="padding:5px 10px;border-radius:16px;font-size:13px" data-a="sv" data-x="${r.sk}">사료 원문 보기 ›</button>`:""}</div>
+  <div class="own"><b>사장님</b><p>${r.r}</p><small>참고: ${r.s}</small></div>
+  ${r.link?`<button class="more" data-a="reviews" data-x="${r.link}">이 손님의 ${r.link==="s1"?"몇 년 뒤":"첫"} 리뷰 보기 ›</button>`:""}</article>`).join("")}`};
+V.cart=()=>{if(!st.cart.items.length)return hdr("카트")+'<div class="empty">카트가 비어 있어요</div>';const s=SB(st.cart.s),t=cartTotal(),d=discount();return hdr("카트")+`
+ <div class="big"><h2>${s.name}</h2><p>배달 주소: 북위 낙양시 귀정리(오인방)</p></div>
+ ${st.cart.items.map((i,k)=>`<div class="ci"><div><b>${i.n}</b><p>${i.op||"기본"}</p><p>${won(i.u)}</p></div><div class="qty"><button data-a="cq" data-x="${k}:-1" aria-label="빼기">−</button>${i.q}<button data-a="cq" data-x="${k}:1" aria-label="더하기">+</button></div></div>`).join("")}
+ <button class="btn l" style="margin:14px 20px;width:calc(100% - 40px)" data-a="store" data-x="${s.id}">+ 메뉴 더 담기</button>
+ <div class="lbl">사장님께 요청사항</div><textarea id="req" placeholder="예) 낙장은 시원하게 부탁드려요">${esc(st.req)}</textarea>
+ <div class="sum"><span>주문금액</span><span>${won(t)}</span><span>배달비</span><span>0원</span>
+ ${d?`<span class="dc">낙장 1승 무료 쿠폰</span><span class="dc">−${won(d)}</span>`:st.coupon&&!st.cUsed?`<span style="grid-column:1/-1;color:var(--sub);font-size:13px">낙장 1승을 담으면 쿠폰이 적용돼요</span>`:""}
+ <span class="t">결제금액</span><span class="t">${won(t-d)}</span></div>
+ <p class="note" style="margin-bottom:16px">실제 결제는 되지 않는 체험용 화면이에요.</p>`};
+const STEPS=["주문 접수","조리 중","배달 중","배달 완료"];
+V.order=oid=>{const o=st.orders.find(x=>x.id===oid);return hdr("주문 현황")+`
+ <div class="big"><h2>${STEPS[o.step]}${o.step<3?"…":""}</h2><p>${SB(o.s).name} → 귀정리(오인방)</p></div>
+ <ol class="steps">${STEPS.map((x,i)=>`<li class="${i<=o.step?"on":""}"><i>${i+1}</i>${x}</li>`).join("")}</ol>
+ <div class="sec"><h3>주문 내역</h3>${o.items.map(i=>`<p>${i.n} × ${i.q} <span style="color:var(--sub)">${i.op||""}</span></p>`).join("")}<p><b>결제금액 ${won(o.total)}</b></p>${o.req?`<p style="color:var(--sub)">요청사항: ${esc(o.req)}</p>`:""}</div>`};
+function searchRes(){const q=st.q.trim();if(!q)return "";let h="";
+ if(/볶|튀/.test(q))h+=`<div class="alert">${bd("설명")} “그들 중 가장 출현빈도가 높은 것은 볶고 튀기는 것이 아니라 고기를 굽는 燒와 烤였다.”<small>${C2}</small></div>`;
+ if(/돼지/.test(q))h+=`<div class="alert">${bd("설명")} 북조 빙례 고기에 돼지는 보이지 않지만, 『제민요술』의 저소와 어자에는 돼지고기가 들어가요.<small>${C2}</small></div>`;
+ const res=Object.values(M).filter(m=>(m.n+m.h+m.d+(m.sr?m.sr[0]:"")+(m.ex?m.ex[0]:"")).includes(q));
+ return h+(res.length?res.map(menuRow).join(""):`<div class="empty">‘${esc(q)}’ 메뉴는 자료에 없어요</div>`)}
+V.search=()=>`<header class="hd"><h1>검색</h1></header>
+ <div class="sin"><input id="sq" type="search" value="${esc(st.q)}" placeholder="양고기 어때요?" aria-label="메뉴 검색"></div>
+ <div class="lbl" style="margin-top:4px">인기 검색어 ${bd("창작")}</div>
+ <div class="kw">${["양고기","낙장","회","호병","저소","방어","볶음","돼지"].map(k=>`<button data-a="q" data-x="${k}">${k}</button>`).join("")}</div>
+ <div id="sres">${searchRes()}</div>`;
+V.favs=()=>{const l=S.filter(s=>st.favs.has(s.id));return `<header class="hd"><h1>즐겨찾기</h1></header>${l.length?l.map(storeCard).join(""):'<div class="empty">가게 화면에서 하트를 누르면 여기에 모여요</div>'}`};
+V.orders=()=>`<header class="hd"><h1>주문내역</h1></header>${st.orders.length?st.orders.map(o=>`<button class="ol" data-a="order" data-x="${o.id}"><b>${SB(o.s).name}</b> · ${STEPS[o.step]}<small>${o.items.map(i=>i.n).join(", ")} · ${won(o.total)}</small></button>`).join(""):'<div class="empty">아직 주문한 메뉴가 없어요</div>'}`;
+V.my=()=>`<header class="hd"><h1>마이</h1></header>
+ <div class="sec"><h3>이 앱에 대하여</h3><p>위진남북조 시기 중원의 인구가 대거 남쪽으로 옮겨 가고, 북방에서는 이민족과 한족이 섞여 살게 되었어요. 이 변화가 음식 생산과 식생활, 식문화에 큰 영향을 미쳤어요(자오롱광·주도경 2015).</p><p>북위 후기 낙양에는 북방의 음식문화, 유목민의 양고기와 유제품, 남방(강남)의 차와 물고기가 함께 있으며 서로 영향을 주고받았어요(${C1}). 낙양이츠는 그 식탁을 배달앱으로 옮긴 위진남북조 수업 제작물이에요.</p></div>
+ <div class="sec"><h3>표시 읽는 법</h3><div class="lg">${bd("사료")}<span>원전에 기록된 사실. 원전 이름을 달았고, 누르면 원문을 볼 수 있어요.</span>${bd("설명")}<span>논문 원문을 그대로 옮긴 것. 가게 소개와 메뉴 근거에 써요.</span>${bd("창작")}<span>가게 이름, 가격, 별점, 배달 시간, 리뷰 말투처럼 지어낸 것.</span></div></div>
+ <div class="sec"><h3>공지사항</h3>${NOTICES.map(n=>`<button class="ol" style="padding:10px 0" data-a="sv" data-x="${n.k}"><b>${n.t}</b><small>${n.d} · 사료 원문 보기 ›</small></button>`).join("")}</div>
+ <div class="sec"><h3>쿠폰함</h3><p>${st.coupon?(st.cUsed?"낙장 1승 무료 쿠폰 (사용 완료)":"낙장 1승 무료 쿠폰 1장 · 양고기왕자 락죽공주에서 사용"):"쿠폰이 없어요. 홈 맨 위 쿠폰을 긁어 보세요."}</p></div>
+ <div class="sec"><h3>참고문헌</h3><ul>
+  <li>『南齊書』 卷45 · 『北史』 卷17, 卷19 · 『周書』 卷32 · 『魏書』 卷94, 卷110</li>
+  <li>楊衒之, 『洛陽伽藍記』 卷2, 卷3</li><li>賈思勰, 『齊民要術』 (최덕경 2009 재인용)</li>
+  <li>최진열. (2015). 북위(北魏) 후기의 국제도시 낙양(洛陽): 종족 분포와 다문화 공존을 중심으로. 『도시인문학연구』, 7(2), 135–178.</li>
+  <li>최덕경. (2009). 『齊民要術』에 보이는 動植物의 배양과 胡漢 農業文化의 融合. 『중국사연구』, 62, 23–96.</li>
+  <li>자오롱광, 주도경. (2015). 나의 체험적 중화음식 연구. 『아시아리뷰』, 5(1), 3–39.</li></ul></div>`;
+V.event=()=>{const c=st.ch,calfDay=c.day%3===0;return hdr("하루 양 3마리 챌린지")+`
+ <div class="ev"><p>${c.day}일째 · 오늘 먹은 양</p><div class="n">${c.sheep}<small> / 3마리</small></div>
+  <div class="flock">${[0,1,2].map(i=>`<i class="${i<c.sheep?"on":""}">양</i>`).join("")}<i class="${calfDay&&c.calfToday?"on":""}" style="${calfDay?"":"opacity:.35"}">송</i></div>
+  <p>누적: 양 ${c.total}마리 · 송아지 ${c.tc}마리</p></div>
+ <div class="btns"><button class="btn" data-a="sheep" ${c.sheep>=3?"disabled":""}>양 1마리 먹기</button>
+  <button class="btn" style="background:#3f5a2a" data-a="calf" ${calfDay&&!c.calfToday?"":"disabled"}>${calfDay?"송아지 1마리 먹기 (사흘째)":"송아지는 사흘째에 먹어요"}</button>
+  <button class="btn l" data-a="day">다음 날로</button></div>
+ ${c.tc>=1&&c.total>=9?`<div class="alert" style="margin-top:16px"><b>원휘업 달성!</b> 사흘 동안 양 9마리와 송아지 1마리를 먹었어요.</div>`:""}
+ <div class="basis" style="margin:16px 20px"><h3>이 챌린지의 근거</h3>
+  <p>${sb("huiye")} 원휘업은 시운이 기울자 오로지 먹고 마시는 일에만 힘써, 하루에 양 세 마리, 사흘에 송아지 한 마리를 먹었다.</p>
+  <small>원전: ${SRC.huiye.src} · <button class="srcbtn" data-a="sv" data-x="huiye">원문 보기 ›</button></small>
+  <div class="ex">${quote(["원태흥과 원휘업의 일화에서 당시 북위 황실 원씨 일족들이 고기를 常食하였음을 확인할 수 있다.",C1])}</div></div>`};
+
+/* ---------- 하단 고정 ---------- */
+const NAV=[["home","홈",I.home],["search","검색",I.search],["favs","즐겨찾기",I.heart],["orders","주문내역",I.list],["my","마이",I.user]];
+function dock(v){let h="";
+ if(v==="menu")return `<button class="cta" data-a="add">배달 카트에 담기 · ${won(unit()*st.sel.q)}</button>`;
+ if(v==="cart"&&st.cart.items.length)return `<button class="cta" data-a="place">${won(cartTotal()-discount())} 주문하기</button>`;
+ if(st.cart.items.length&&["home","cat","store","reviews","search","favs"].includes(v)){const d=discount(),t=cartTotal();h+=`<button class="cbar" data-a="go" data-x="cart"><i>${st.cart.items.reduce((a,i)=>a+i.q,0)}</i>카트 보기<span>${d?`<s style="opacity:.6;font-size:15px;font-weight:500">${won(t)}</s> `:""}${won(t-d)}</span></button>`}
+ if(["home","search","favs","orders","my"].includes(v))h+=`<nav class="nav">${NAV.map(([k,n,ic])=>`<button class="${k===v?"on":""}" data-a="tab" data-x="${k}">${ic}${n}</button>`).join("")}</nav>`;
+ return h}
+
+/* ---------- 그리기 ---------- */
+const app=document.getElementById("app");
+function render(keep){const v=cur(),y=scrollY;app.innerHTML=V[v.v](v.p)+`<div class="dock" id="dock">${dock(v.v)}</div>`;
+ const d=document.getElementById("dock");app.style.paddingBottom=(d.offsetHeight+12)+"px";
+ if(keep)scrollTo(0,y);
+ if(v.v==="home")initScratch()}
+function go(v,p){cur().y=scrollY;st.stack.push({v,p});render();scrollTo(0,0)}
+function back(){if(st.stack.length>1){st.stack.pop();render();scrollTo(0,cur().y||0)}}
+function tab(v){st.stack=[{v}];render();scrollTo(0,0)}
+function toast(t){document.querySelectorAll(".toast").forEach(e=>e.remove());const e=document.createElement("div");e.className="toast";e.textContent=t;document.body.appendChild(e);setTimeout(()=>e.remove(),2200)}
+function modal(h){closeModal();const m=document.createElement("div");m.className="mo";m.innerHTML=`<div class="mo-bg" data-a="close"></div><div class="mo-sh" role="dialog">${h}</div>`;document.body.appendChild(m)}
+function closeModal(){document.querySelectorAll(".mo").forEach(e=>e.remove())}
+
+function initScratch(){const box=document.getElementById("scr"),cv=document.getElementById("scv");if(!box||!cv)return;
+ const r=box.getBoundingClientRect(),dpr=devicePixelRatio||1;cv.width=r.width*dpr;cv.height=r.height*dpr;const c=cv.getContext("2d");c.scale(dpr,dpr);
+ const g=c.createLinearGradient(0,0,r.width,r.height);g.addColorStop(0,"#c3c7ce");g.addColorStop(.5,"#eef0f3");g.addColorStop(1,"#b4b9c1");c.fillStyle=g;c.fillRect(0,0,r.width,r.height);
+ c.fillStyle="#4a505b";c.font='700 19px "Noto Sans KR",sans-serif';c.textAlign="center";c.textBaseline="middle";c.fillText("긁어서 쿠폰 확인하기  →",r.width/2,r.height/2);
+ c.globalCompositeOperation="destination-out";let down=false,n=0;
+ const check=()=>{const d=c.getImageData(0,0,cv.width,cv.height).data;let k=0,t=0;for(let i=3;i<d.length;i+=200){t++;if(d[i]===0)k++}if(k/t>.42)reveal()};
+ const rub=e=>{const b=cv.getBoundingClientRect();c.beginPath();c.arc(e.clientX-b.left,e.clientY-b.top,20,0,7);c.fill();if(++n%10===0)check()};
+ cv.addEventListener("pointerdown",e=>{down=true;cv.setPointerCapture(e.pointerId);rub(e)});
+ cv.addEventListener("pointermove",e=>{if(down)rub(e)});
+ cv.addEventListener("pointerup",()=>{down=false;check()})}
+function reveal(){if(st.coupon)return;st.coupon=true;toast("낙장 1승 무료 쿠폰을 받았어요");if(cur().v==="home")render(true)}
+
+function openSrc(k){const x=SRC[k];modal(`<h3>${x.t}</h3><p>${bd("사료")} <b>${x.src}</b></p>
+ <div class="orig" lang="zh-Hant">${x.orig}</div>
+ <p class="kl">우리말 풀이</p><p>${x.ko}</p>
+ ${x.note?`<div class="alert" style="margin:0 0 10px">${x.note}</div>`:""}
+ ${k==="meat"?`<p style="color:var(--sub);font-size:13px">${NOTICES[0].body}</p>`:""}
+ <button class="btn l" style="width:100%" data-a="close">닫기</button>`)}
+function openNotices(){st.read=true;modal(`<h3>알림</h3><ul class="srcl">${NOTICES.map(n=>`<li><button style="text-align:left;width:100%" data-a="sv" data-x="${n.k}"><b>${n.t}</b><small>${n.d} · ${n.body}</small></button></li>`).join("")}</ul><button class="btn l" style="width:100%;margin-top:12px" data-a="close">닫기</button>`);if(cur().v==="home"){const dot=document.querySelector(".bell .dot");if(dot)dot.remove()}}
+function openVote(){const v=st.vote;modal(`<h3>차 vs 낙, 당신의 선택은?</h3><p>효문제가 왕숙에게 물었어요. “차를 낙장과 비교하면 어떠한가?”</p>
+ <div class="vs"><button class="${v==="tea"?"on":""}" data-a="pick" data-x="tea">차(茗)</button><button class="${v==="rak"?"on":""}" data-a="pick" data-x="rak">낙(酪)</button></div>
+ ${v?`<div class="alert" style="margin:0">${sb("wangsu")} 왕숙의 대답: 양은 뭍에서 나는 것 가운데 으뜸, 물고기는 물에 사는 것 가운데 으뜸이라 둘 다 진미예요. 다만 차만은 낙의 종도 되지 못한다고 했어요.<small>원전: ${SRC.wangsu.src}</small></div><p style="margin-top:10px">당신은 <b>${v==="tea"?"차":"낙"}</b>를 골랐어요. ${v==="tea"?"강남에서 막 넘어온 왕숙과 같은 선택이에요.":"몇 년 뒤 왕숙과 같은 선택이에요."}</p>`:`<p style="color:var(--sub)">고르면 왕숙의 대답을 보여 드려요.</p>`}
+ <button class="btn l" style="width:100%;margin-top:8px" data-a="close">닫기</button>`)}
+function openStoreSrc(id){const s=SB(id);const items=s.groups.flatMap(g=>g[1]);modal(`<h3>${s.name} 매장·출처정보</h3><p>${bd("설명")} ${s.intro[0]} <span style="color:var(--sub)">${s.intro[1]}</span></p>
+ <ul class="srcl">${items.map(m=>`<li><b>${m.n}</b><small>${m.sr?"원전: "+srcLabel(m):""}${m.sr&&m.ex?" · ":""}${m.ex?"설명: "+m.ex[1]:""}</small></li>`).join("")}</ul>
+ <p style="margin-top:12px;color:var(--sub);font-size:13px">가게 이름, 가격, 별점, 배달 시간은 창작이에요.</p><button class="btn l" style="width:100%" data-a="close">닫기</button>`)}
+function addCart(force){const m=M[st.sel.id];const miss=(m.opt||[]).findIndex((g,gi)=>g.req&&st.sel.o[gi]==null);
+ if(miss>=0){toast(m.opt[miss].t+"을(를) 골라 주세요");return}
+ if(st.cart.s&&st.cart.s!==m.s&&!force){modal(`<h3>다른 가게 메뉴가 담겨 있어요</h3><p>카트에는 같은 가게 메뉴만 담을 수 있어요. 카트를 비우고 ${m.n}을(를) 담을까요?</p><div class="btns" style="padding:0"><button class="btn" data-a="force">비우고 담기</button><button class="btn l" data-a="close">취소</button></div>`);return}
+ if(force)st.cart={s:null,items:[]};
+ const op=(m.opt||[]).map((g,gi)=>st.sel.o[gi]!=null?g.c[st.sel.o[gi]][0]:"").filter(Boolean).join(", ");
+ const ex=st.cart.items.find(i=>i.id===m.id&&i.op===op);if(ex)ex.q+=st.sel.q;else st.cart.items.push({id:m.id,n:m.n,op,u:unit(),q:st.sel.q});
+ st.cart.s=m.s;closeModal();back();toast("메뉴가 담겼습니다.")}
+function place(){const o={id:Date.now(),s:st.cart.s,items:st.cart.items,total:cartTotal()-discount(),step:0,req:st.req};
+ if(discount())st.cUsed=true;st.orders.unshift(o);st.cart={s:null,items:[]};st.req="";st.stack=[{v:"orders"}];go("order",o.id);
+ const adv=()=>{if(o.step>=3)return;setTimeout(()=>{o.step++;const c=cur();if((c.v==="order"&&c.p===o.id)||c.v==="orders")render(true);
+  if(o.step===3)modal(`<div class="done"><i>✓</i><h3>배달이 완료되었습니다</h3><p>${SB(o.s).name}의 음식이 귀정리(오인방)에 도착했어요.<br>맛있게 드시고, 다음에 또 만나요!</p></div><button class="btn" style="width:100%" data-a="close">확인</button>`);
+  adv()},2600)};adv()}
+
+document.addEventListener("click",e=>{const t=e.target.closest("[data-a]");if(!t)return;const a=t.dataset.a,x=t.dataset.x;
+ switch(a){
+  case "back":back();break;
+  case "go":closeModal();go(x);break;
+  case "tab":closeModal();tab(x);break;
+  case "cat":st.onlyCp=false;go("cat",x);break;
+  case "ctab":cur().p=x;render();break;
+  case "store":closeModal();go("store",x);break;
+  case "menu":st.sel={id:x,q:1,o:{}};go("menu",x);break;
+  case "reviews":go("reviews",x);break;
+  case "fav":st.favs.has(x)?st.favs.delete(x):st.favs.add(x);toast(st.favs.has(x)?"즐겨찾기에 담았어요":"즐겨찾기에서 뺐어요");render(true);break;
+  case "opt":{const[g,c]=x.split(":").map(Number);st.sel.o[g]=c;render(true);break}
+  case "qty":st.sel.q=Math.max(1,st.sel.q+Number(x));render(true);break;
+  case "add":addCart(false);break;
+  case "force":addCart(true);break;
+  case "cq":{const[k,d]=x.split(":").map(Number);const it=st.cart.items[k];it.q+=d;if(it.q<1)st.cart.items.splice(k,1);if(!st.cart.items.length)st.cart.s=null;render(true);break}
+  case "place":place();break;
+  case "order":go("order",Number(x));break;
+  case "dtab":st.pickup=x==="1";render(true);break;
+  case "onlyhist":st.onlyHist=!st.onlyHist;render(true);break;
+  case "onlycp":st.onlyCp=!st.onlyCp;render(true);break;
+  case "rvinfo":modal(`<h3>리뷰 안내</h3><p>리뷰 내용은 사료나 논문에 있는 것만 썼고, 커뮤니티 말투와 별점은 창작이에요. ‘사료 속 인물’은 기록에 나오는 사람, ‘가상 손님’은 지어낸 사람이에요. 사장님 답글은 논문 내용을 바탕으로 썼어요.</p><button class="btn l" style="width:100%" data-a="close">확인</button>`);break;
+  case "vote":openVote();break;
+  case "pick":st.vote=x;openVote();break;
+  case "close":closeModal();break;
+  case "src":openStoreSrc(x);break;
+  case "sv":openSrc(x);break;
+  case "notices":openNotices();break;
+  case "reveal":reveal();break;
+  case "coupons":modal(`<h3>미사용 쿠폰함</h3>${st.coupon&&!st.cUsed?`<div class="alert" style="margin:0"><b>낙장 1승 무료 쿠폰</b><small>양고기왕자 락죽공주 · 낙장 1승을 담으면 자동 적용</small></div><button class="btn" style="width:100%;margin-top:12px" data-a="store" data-x="s1">쿠폰 쓰러 가기</button>`:`<p>${st.cUsed?"쿠폰을 이미 사용했어요.":"아직 쿠폰이 없어요. 홈 맨 위 쿠폰을 긁어 보세요."}</p>`}<button class="btn l" style="width:100%;margin-top:10px" data-a="close">닫기</button>`);break;
+  case "q":st.q=x;render(true);break;
+  case "toast":toast(x);break;
+  case "sheep":st.ch.sheep++;st.ch.total++;render(true);break;
+  case "calf":st.ch.calfToday=true;st.ch.tc++;render(true);break;
+  case "day":st.ch.day++;st.ch.sheep=0;st.ch.calfToday=false;render(true);break;
+ }});
+document.addEventListener("input",e=>{if(e.target.id==="sq"){st.q=e.target.value;document.getElementById("sres").innerHTML=searchRes()}if(e.target.id==="req")st.req=e.target.value});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeModal()});
+render();
+}
+</script>
+</body>
+</html>
